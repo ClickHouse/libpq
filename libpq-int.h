@@ -780,14 +780,14 @@ extern int	pgtls_verify_peer_name_matches_certificate_guts(PGconn *conn,
 /*
  * Establish a GSSAPI-encrypted connection.
  */
-extern PostgresPollingStatusType pqsecure_open_gss(PGconn *conn);
-
-/*
- * Read and write functions for GSSAPI-encrypted connections, with internal
- * buffering to handle nonblocking sockets.
- */
-extern ssize_t pg_GSS_write(PGconn *conn, const void *ptr, size_t len);
-extern ssize_t pg_GSS_read(PGconn *conn, void *ptr, size_t len);
+//extern PostgresPollingStatusType pqsecure_open_gss(PGconn *conn);
+//
+///*
+// * Read and write functions for GSSAPI-encrypted connections, with internal
+// * buffering to handle nonblocking sockets.
+// */
+//extern ssize_t pg_GSS_write(PGconn *conn, const void *ptr, size_t len);
+//extern ssize_t pg_GSS_read(PGconn *conn, void *ptr, size_t len);
 #endif
 
 /* === miscellaneous macros === */

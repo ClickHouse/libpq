@@ -44,12 +44,12 @@ extern void pq_sendfloat8(StringInfo buf, float8 f);
  * overly picky and demanding a * before a restrict.
  */
 static inline void
-pq_writeint8(StringInfoData *pg_restrict buf, uint8 i)
+pq_writeint8(StringInfoData * buf, uint8 i)
 {
 	uint8		ni = i;
 
 	Assert(buf->len + (int) sizeof(uint8) <= buf->maxlen);
-	memcpy((char *pg_restrict) (buf->data + buf->len), &ni, sizeof(uint8));
+	memcpy((char *) (buf->data + buf->len), &ni, sizeof(uint8));
 	buf->len += sizeof(uint8);
 }
 
@@ -58,12 +58,12 @@ pq_writeint8(StringInfoData *pg_restrict buf, uint8 i)
  * preallocated.
  */
 static inline void
-pq_writeint16(StringInfoData *pg_restrict buf, uint16 i)
+pq_writeint16(StringInfoData * buf, uint16 i)
 {
 	uint16		ni = pg_hton16(i);
 
 	Assert(buf->len + (int) sizeof(uint16) <= buf->maxlen);
-	memcpy((char *pg_restrict) (buf->data + buf->len), &ni, sizeof(uint16));
+	memcpy((char *) (buf->data + buf->len), &ni, sizeof(uint16));
 	buf->len += sizeof(uint16);
 }
 
@@ -72,12 +72,12 @@ pq_writeint16(StringInfoData *pg_restrict buf, uint16 i)
  * preallocated.
  */
 static inline void
-pq_writeint32(StringInfoData *pg_restrict buf, uint32 i)
+pq_writeint32(StringInfoData * buf, uint32 i)
 {
 	uint32		ni = pg_hton32(i);
 
 	Assert(buf->len + (int) sizeof(uint32) <= buf->maxlen);
-	memcpy((char *pg_restrict) (buf->data + buf->len), &ni, sizeof(uint32));
+	memcpy((char *) (buf->data + buf->len), &ni, sizeof(uint32));
 	buf->len += sizeof(uint32);
 }
 
@@ -86,12 +86,12 @@ pq_writeint32(StringInfoData *pg_restrict buf, uint32 i)
  * preallocated.
  */
 static inline void
-pq_writeint64(StringInfoData *pg_restrict buf, uint64 i)
+pq_writeint64(StringInfoData * buf, uint64 i)
 {
 	uint64		ni = pg_hton64(i);
 
 	Assert(buf->len + (int) sizeof(uint64) <= buf->maxlen);
-	memcpy((char *pg_restrict) (buf->data + buf->len), &ni, sizeof(uint64));
+	memcpy((char *) (buf->data + buf->len), &ni, sizeof(uint64));
 	buf->len += sizeof(uint64);
 }
 
@@ -106,7 +106,7 @@ pq_writeint64(StringInfoData *pg_restrict buf, uint64 i)
  * sent to the frontend.
  */
 static inline void
-pq_writestring(StringInfoData *pg_restrict buf, const char *pg_restrict str)
+pq_writestring(StringInfoData * buf, const char * str)
 {
 	int			slen = strlen(str);
 	char	   *p;
@@ -117,7 +117,7 @@ pq_writestring(StringInfoData *pg_restrict buf, const char *pg_restrict str)
 
 	Assert(buf->len + slen + 1 <= buf->maxlen);
 
-	memcpy(((char *pg_restrict) buf->data + buf->len), p, slen + 1);
+	memcpy(((char *) buf->data + buf->len), p, slen + 1);
 	buf->len += slen + 1;
 
 	if (p != str)

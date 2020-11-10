@@ -475,35 +475,35 @@ pqDropConnection(PGconn *conn, bool flushInput)
 
 	/* Free authentication/encryption state */
 #ifdef ENABLE_GSS
-	{
-		OM_uint32	min_s;
-
-		if (conn->gcred != GSS_C_NO_CREDENTIAL)
-		{
-			gss_release_cred(&min_s, &conn->gcred);
-			conn->gcred = GSS_C_NO_CREDENTIAL;
-		}
-		if (conn->gctx)
-			gss_delete_sec_context(&min_s, &conn->gctx, GSS_C_NO_BUFFER);
-		if (conn->gtarg_nam)
-			gss_release_name(&min_s, &conn->gtarg_nam);
-		if (conn->gss_SendBuffer)
-		{
-			free(conn->gss_SendBuffer);
-			conn->gss_SendBuffer = NULL;
-		}
-		if (conn->gss_RecvBuffer)
-		{
-			free(conn->gss_RecvBuffer);
-			conn->gss_RecvBuffer = NULL;
-		}
-		if (conn->gss_ResultBuffer)
-		{
-			free(conn->gss_ResultBuffer);
-			conn->gss_ResultBuffer = NULL;
-		}
-		conn->gssenc = false;
-	}
+//	{
+//		OM_uint32	min_s;
+//
+//		if (conn->gcred != GSS_C_NO_CREDENTIAL)
+//		{
+//			gss_release_cred(&min_s, &conn->gcred);
+//			conn->gcred = GSS_C_NO_CREDENTIAL;
+//		}
+//		if (conn->gctx)
+//			gss_delete_sec_context(&min_s, &conn->gctx, GSS_C_NO_BUFFER);
+//		if (conn->gtarg_nam)
+//			gss_release_name(&min_s, &conn->gtarg_nam);
+//		if (conn->gss_SendBuffer)
+//		{
+//			free(conn->gss_SendBuffer);
+//			conn->gss_SendBuffer = NULL;
+//		}
+//		if (conn->gss_RecvBuffer)
+//		{
+//			free(conn->gss_RecvBuffer);
+//			conn->gss_RecvBuffer = NULL;
+//		}
+//		if (conn->gss_ResultBuffer)
+//		{
+//			free(conn->gss_ResultBuffer);
+//			conn->gss_ResultBuffer = NULL;
+//		}
+//		conn->gssenc = false;
+//	}
 #endif
 #ifdef ENABLE_SSPI
 	if (conn->sspitarget)
@@ -1363,14 +1363,14 @@ connectOptions2(PGconn *conn)
 			return false;
 		}
 #ifndef ENABLE_GSS
-		if (strcmp(conn->gssencmode, "require") == 0)
-		{
-			conn->status = CONNECTION_BAD;
-			printfPQExpBuffer(&conn->errorMessage,
-							  libpq_gettext("gssencmode value \"%s\" invalid when GSSAPI support is not compiled in\n"),
-							  conn->gssencmode);
-			return false;
-		}
+//		if (strcmp(conn->gssencmode, "require") == 0)
+//		{
+//			conn->status = CONNECTION_BAD;
+//			printfPQExpBuffer(&conn->errorMessage,
+//							  libpq_gettext("gssencmode value \"%s\" invalid when GSSAPI support is not compiled in\n"),
+//							  conn->gssencmode);
+//			return false;
+//		}
 #endif
 	}
 	else
@@ -2879,31 +2879,31 @@ keep_going:						/* We will come back to here until there is
 				 * conn->gcred), and then send a packet to the server asking
 				 * for GSSAPI Encryption (and skip past SSL negotiation and
 				 * regular startup below).
-				 */
-				if (conn->try_gss && !conn->gctx)
-					conn->try_gss = pg_GSS_have_cred_cache(&conn->gcred);
-				if (conn->try_gss && !conn->gctx)
-				{
-					ProtocolVersion pv = pg_hton32(NEGOTIATE_GSS_CODE);
-
-					if (pqPacketSend(conn, 0, &pv, sizeof(pv)) != STATUS_OK)
-					{
-						appendPQExpBuffer(&conn->errorMessage,
-										  libpq_gettext("could not send GSSAPI negotiation packet: %s\n"),
-										  SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
-						goto error_return;
-					}
-
-					/* Ok, wait for response */
-					conn->status = CONNECTION_GSS_STARTUP;
-					return PGRES_POLLING_READING;
-				}
-				else if (!conn->gctx && conn->gssencmode[0] == 'r')
-				{
-					appendPQExpBufferStr(&conn->errorMessage,
-										 libpq_gettext("GSSAPI encryption required but was impossible (possibly no credential cache, no server support, or using a local socket)\n"));
-					goto error_return;
-				}
+//				 */
+//				if (conn->try_gss && !conn->gctx)
+//					conn->try_gss = pg_GSS_have_cred_cache(&conn->gcred);
+//				if (conn->try_gss && !conn->gctx)
+//				{
+//					ProtocolVersion pv = pg_hton32(NEGOTIATE_GSS_CODE);
+//
+//					if (pqPacketSend(conn, 0, &pv, sizeof(pv)) != STATUS_OK)
+//					{
+//						appendPQExpBuffer(&conn->errorMessage,
+//										  libpq_gettext("could not send GSSAPI negotiation packet: %s\n"),
+//										  SOCK_STRERROR(SOCK_ERRNO, sebuf, sizeof(sebuf)));
+//						goto error_return;
+//					}
+//
+//					/* Ok, wait for response */
+//					conn->status = CONNECTION_GSS_STARTUP;
+//					return PGRES_POLLING_READING;
+//				}
+//				else if (!conn->gctx && conn->gssencmode[0] == 'r')
+//				{
+//					appendPQExpBufferStr(&conn->errorMessage,
+//										 libpq_gettext("GSSAPI encryption required but was impossible (possibly no credential cache, no server support, or using a local socket)\n"));
+//					goto error_return;
+//				}
 #endif
 
 #ifdef USE_SSL
@@ -3108,89 +3108,89 @@ keep_going:						/* We will come back to here until there is
 		case CONNECTION_GSS_STARTUP:
 			{
 #ifdef ENABLE_GSS
-				PostgresPollingStatusType pollres;
-
-				/*
-				 * If we haven't yet, get the postmaster's response to our
-				 * negotiation packet
-				 */
-				if (conn->try_gss && !conn->gctx)
-				{
-					char		gss_ok;
-					int			rdresult = pqReadData(conn);
-
-					if (rdresult < 0)
-						/* pqReadData fills in error message */
-						goto error_return;
-					else if (rdresult == 0)
-						/* caller failed to wait for data */
-						return PGRES_POLLING_READING;
-					if (pqGetc(&gss_ok, conn) < 0)
-						/* shouldn't happen... */
-						return PGRES_POLLING_READING;
-
-					if (gss_ok == 'E')
-					{
-						/*
-						 * Server failure of some sort.  Assume it's a
-						 * protocol version support failure, and let's see if
-						 * we can't recover (if it's not, we'll get a better
-						 * error message on retry).  Server gets fussy if we
-						 * don't hang up the socket, though.
-						 */
-						conn->try_gss = false;
-						pqDropConnection(conn, true);
-						conn->status = CONNECTION_NEEDED;
-						goto keep_going;
-					}
-
-					/* mark byte consumed */
-					conn->inStart = conn->inCursor;
-
-					if (gss_ok == 'N')
-					{
-						/* Server doesn't want GSSAPI; fall back if we can */
-						if (conn->gssencmode[0] == 'r')
-						{
-							appendPQExpBufferStr(&conn->errorMessage,
-												 libpq_gettext("server doesn't support GSSAPI encryption, but it was required\n"));
-							goto error_return;
-						}
-
-						conn->try_gss = false;
-						conn->status = CONNECTION_MADE;
-						return PGRES_POLLING_WRITING;
-					}
-					else if (gss_ok != 'G')
-					{
-						appendPQExpBuffer(&conn->errorMessage,
-										  libpq_gettext("received invalid response to GSSAPI negotiation: %c\n"),
-										  gss_ok);
-						goto error_return;
-					}
-				}
-
-				/* Begin or continue GSSAPI negotiation */
-				pollres = pqsecure_open_gss(conn);
-				if (pollres == PGRES_POLLING_OK)
-				{
-					/* All set for startup packet */
-					conn->status = CONNECTION_MADE;
-					return PGRES_POLLING_WRITING;
-				}
-				else if (pollres == PGRES_POLLING_FAILED &&
-						 conn->gssencmode[0] == 'p')
-				{
-					/*
-					 * We failed, but we can retry on "prefer".  Have to drop
-					 * the current connection to do so, though.
-					 */
-					conn->try_gss = false;
-					pqDropConnection(conn, true);
-					conn->status = CONNECTION_NEEDED;
-					goto keep_going;
-				}
-				return pollres;
+//				PostgresPollingStatusType pollres;
+//
+//				/*
+//				 * If we haven't yet, get the postmaster's response to our
+//				 * negotiation packet
+//				 */
+//				if (conn->try_gss && !conn->gctx)
+//				{
+//					char		gss_ok;
+//					int			rdresult = pqReadData(conn);
+//
+//					if (rdresult < 0)
+//						/* pqReadData fills in error message */
+//						goto error_return;
+//					else if (rdresult == 0)
+//						/* caller failed to wait for data */
+//						return PGRES_POLLING_READING;
+//					if (pqGetc(&gss_ok, conn) < 0)
+//						/* shouldn't happen... */
+//						return PGRES_POLLING_READING;
+//
+//					if (gss_ok == 'E')
+//					{
+//						/*
+//						 * Server failure of some sort.  Assume it's a
+//						 * protocol version support failure, and let's see if
+//						 * we can't recover (if it's not, we'll get a better
+//						 * error message on retry).  Server gets fussy if we
+//						 * don't hang up the socket, though.
+//						 */
+//						conn->try_gss = false;
+//						pqDropConnection(conn, true);
+//						conn->status = CONNECTION_NEEDED;
+//						goto keep_going;
+//					}
+//
+//					/* mark byte consumed */
+//					conn->inStart = conn->inCursor;
+//
+//					if (gss_ok == 'N')
+//					{
+//						/* Server doesn't want GSSAPI; fall back if we can */
+//						if (conn->gssencmode[0] == 'r')
+//						{
+//							appendPQExpBufferStr(&conn->errorMessage,
+//												 libpq_gettext("server doesn't support GSSAPI encryption, but it was required\n"));
+//							goto error_return;
+//						}
+//
+//						conn->try_gss = false;
+//						conn->status = CONNECTION_MADE;
+//						return PGRES_POLLING_WRITING;
+//					}
+//					else if (gss_ok != 'G')
+//					{
+//						appendPQExpBuffer(&conn->errorMessage,
+//										  libpq_gettext("received invalid response to GSSAPI negotiation: %c\n"),
+//										  gss_ok);
+//						goto error_return;
+//					}
+//				}
+//
+//				/* Begin or continue GSSAPI negotiation */
+//				pollres = pqsecure_open_gss(conn);
+//				if (pollres == PGRES_POLLING_OK)
+//				{
+//					/* All set for startup packet */
+//					conn->status = CONNECTION_MADE;
+//					return PGRES_POLLING_WRITING;
+//				}
+//				else if (pollres == PGRES_POLLING_FAILED &&
+//						 conn->gssencmode[0] == 'p')
+//				{
+//					/*
+//					 * We failed, but we can retry on "prefer".  Have to drop
+//					 * the current connection to do so, though.
+//					 */
+//					conn->try_gss = false;
+//					pqDropConnection(conn, true);
+//					conn->status = CONNECTION_NEEDED;
+//					goto keep_going;
+//				}
+//				return pollres;
 #else							/* !ENABLE_GSS */
 				/* unreachable */
 				goto error_return;

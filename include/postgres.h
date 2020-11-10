@@ -44,7 +44,7 @@
 #define POSTGRES_H
 
 #include "c.h"
-#include "utils/elog.h"
+#include "utils/errlog.h"
 #include "utils/palloc.h"
 
 /* ----------------------------------------------------------------

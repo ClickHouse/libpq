@@ -222,11 +222,11 @@ pqsecure_read(PGconn *conn, void *ptr, size_t len)
 	else
 #endif
 #ifdef ENABLE_GSS
-	if (conn->gssenc)
-	{
-		n = pg_GSS_read(conn, ptr, len);
-	}
-	else
+//	if (conn->gssenc)
+//	{
+//		n = pg_GSS_read(conn, ptr, len);
+//	}
+//	else
 #endif
 	{
 		n = pqsecure_raw_read(conn, ptr, len);
@@ -304,11 +304,11 @@ pqsecure_write(PGconn *conn, const void *ptr, size_t len)
 	else
 #endif
 #ifdef ENABLE_GSS
-	if (conn->gssenc)
-	{
-		n = pg_GSS_write(conn, ptr, len);
-	}
-	else
+//	if (conn->gssenc)
+//	{
+//		n = pg_GSS_write(conn, ptr, len);
+//	}
+//	else
 #endif
 	{
 		n = pqsecure_raw_write(conn, ptr, len);

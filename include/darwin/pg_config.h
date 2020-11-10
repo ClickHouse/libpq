@@ -50,7 +50,7 @@
 #define DEF_PGPORT_STR "5432"
 
 /* Define to build with GSSAPI support. (--with-gssapi) */
-#define ENABLE_GSS 1
+#define ENABLE_GSS 0
 
 /* Define to 1 if you want National Language Support. (--enable-nls) */
 /* #undef ENABLE_NLS */
@@ -233,7 +233,7 @@
 /* #undef HAVE_GETTIMEOFDAY */
 
 /* Define to 1 if you have the <gssapi/gssapi.h> header file. */
-#define HAVE_GSSAPI_GSSAPI_H 1
+#define HAVE_GSSAPI_GSSAPI_H 0
 
 /* Define to 1 if you have the <gssapi.h> header file. */
 /* #undef HAVE_GSSAPI_H */
@@ -821,6 +821,8 @@
 
 /* Define to build with OpenSSL support. (--with-openssl) */
 #define USE_OPENSSL 1
+
+#define FRONTEND 1
 
 /* Define to 1 to build with PAM support. (--with-pam) */
 #define USE_PAM 1

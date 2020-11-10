@@ -44,140 +44,141 @@
 #include "libpq-fe.h"
 
 #ifdef ENABLE_GSS
-/*
- * GSSAPI authentication system.
- */
-
-#include "fe-gssapi-common.h"
-
-/*
- * Continue GSS authentication with next token as needed.
- */
-static int
-pg_GSS_continue(PGconn *conn, int payloadlen)
-{
-	OM_uint32	maj_stat,
-				min_stat,
-				lmin_s;
-	gss_buffer_desc ginbuf;
-	gss_buffer_desc goutbuf;
-
-	/*
-	 * On first call, there's no input token. On subsequent calls, read the
-	 * input token into a GSS buffer.
-	 */
-	if (conn->gctx != GSS_C_NO_CONTEXT)
-	{
-		ginbuf.length = payloadlen;
-		ginbuf.value = malloc(payloadlen);
-		if (!ginbuf.value)
-		{
-			printfPQExpBuffer(&conn->errorMessage,
-							  libpq_gettext("out of memory allocating GSSAPI buffer (%d)\n"),
-							  payloadlen);
-			return STATUS_ERROR;
-		}
-		if (pqGetnchar(ginbuf.value, payloadlen, conn))
-		{
-			/*
-			 * Shouldn't happen, because the caller should've ensured that the
-			 * whole message is already in the input buffer.
-			 */
-			free(ginbuf.value);
-			return STATUS_ERROR;
-		}
-	}
-	else
-	{
-		ginbuf.length = 0;
-		ginbuf.value = NULL;
-	}
-
-	maj_stat = gss_init_sec_context(&min_stat,
-									GSS_C_NO_CREDENTIAL,
-									&conn->gctx,
-									conn->gtarg_nam,
-									GSS_C_NO_OID,
-									GSS_C_MUTUAL_FLAG,
-									0,
-									GSS_C_NO_CHANNEL_BINDINGS,
-									(ginbuf.value == NULL) ? GSS_C_NO_BUFFER : &ginbuf,
-									NULL,
-									&goutbuf,
-									NULL,
-									NULL);
-
-	if (ginbuf.value)
-		free(ginbuf.value);
-
-	if (goutbuf.length != 0)
-	{
-		/*
-		 * GSS generated data to send to the server. We don't care if it's the
-		 * first or subsequent packet, just send the same kind of password
-		 * packet.
-		 */
-		if (pqPacketSend(conn, 'p',
-						 goutbuf.value, goutbuf.length) != STATUS_OK)
-		{
-			gss_release_buffer(&lmin_s, &goutbuf);
-			return STATUS_ERROR;
-		}
-	}
-	gss_release_buffer(&lmin_s, &goutbuf);
-
-	if (maj_stat != GSS_S_COMPLETE && maj_stat != GSS_S_CONTINUE_NEEDED)
-	{
-		pg_GSS_error(libpq_gettext("GSSAPI continuation error"),
-					 conn,
-					 maj_stat, min_stat);
-		gss_release_name(&lmin_s, &conn->gtarg_nam);
-		if (conn->gctx)
-			gss_delete_sec_context(&lmin_s, &conn->gctx, GSS_C_NO_BUFFER);
-		return STATUS_ERROR;
-	}
-
-	if (maj_stat == GSS_S_COMPLETE)
-		gss_release_name(&lmin_s, &conn->gtarg_nam);
-
-	return STATUS_OK;
-}
-
-/*
- * Send initial GSS authentication token
- */
-static int
-pg_GSS_startup(PGconn *conn, int payloadlen)
-{
-	int			ret;
-	char	   *host = conn->connhost[conn->whichhost].host;
-
-	if (!(host && host[0] != '\0'))
-	{
-		printfPQExpBuffer(&conn->errorMessage,
-						  libpq_gettext("host name must be specified\n"));
-		return STATUS_ERROR;
-	}
-
-	if (conn->gctx)
-	{
-		printfPQExpBuffer(&conn->errorMessage,
-						  libpq_gettext("duplicate GSS authentication request\n"));
-		return STATUS_ERROR;
-	}
-
-	ret = pg_GSS_load_servicename(conn);
-	if (ret != STATUS_OK)
-		return ret;
-
-	/*
-	 * Initial packet is the same as a continuation packet with no initial
-	 * context.
-	 */
-	conn->gctx = GSS_C_NO_CONTEXT;
-
-	return pg_GSS_continue(conn, payloadlen);
-}
+//
+///*
+// * GSSAPI authentication system.
+// */
+//
+//#include "fe-gssapi-common.h"
+//
+///*
+// * Continue GSS authentication with next token as needed.
+// */
+//static int
+//pg_GSS_continue(PGconn *conn, int payloadlen)
+//{
+//	OM_uint32	maj_stat,
+//				min_stat,
+//				lmin_s;
+//	gss_buffer_desc ginbuf;
+//	gss_buffer_desc goutbuf;
+//
+//	/*
+//	 * On first call, there's no input token. On subsequent calls, read the
+//	 * input token into a GSS buffer.
+//	 */
+//	if (conn->gctx != GSS_C_NO_CONTEXT)
+//	{
+//		ginbuf.length = payloadlen;
+//		ginbuf.value = malloc(payloadlen);
+//		if (!ginbuf.value)
+//		{
+//			printfPQExpBuffer(&conn->errorMessage,
+//							  libpq_gettext("out of memory allocating GSSAPI buffer (%d)\n"),
+//							  payloadlen);
+//			return STATUS_ERROR;
+//		}
+//		if (pqGetnchar(ginbuf.value, payloadlen, conn))
+//		{
+//			/*
+//			 * Shouldn't happen, because the caller should've ensured that the
+//			 * whole message is already in the input buffer.
+//			 */
+//			free(ginbuf.value);
+//			return STATUS_ERROR;
+//		}
+//	}
+//	else
+//	{
+//		ginbuf.length = 0;
+//		ginbuf.value = NULL;
+//	}
+//
+//	maj_stat = gss_init_sec_context(&min_stat,
+//									GSS_C_NO_CREDENTIAL,
+//									&conn->gctx,
+//									conn->gtarg_nam,
+//									GSS_C_NO_OID,
+//									GSS_C_MUTUAL_FLAG,
+//									0,
+//									GSS_C_NO_CHANNEL_BINDINGS,
+//									(ginbuf.value == NULL) ? GSS_C_NO_BUFFER : &ginbuf,
+//									NULL,
+//									&goutbuf,
+//									NULL,
+//									NULL);
+//
+//	if (ginbuf.value)
+//		free(ginbuf.value);
+//
+//	if (goutbuf.length != 0)
+//	{
+//		/*
+//		 * GSS generated data to send to the server. We don't care if it's the
+//		 * first or subsequent packet, just send the same kind of password
+//		 * packet.
+//		 */
+//		if (pqPacketSend(conn, 'p',
+//						 goutbuf.value, goutbuf.length) != STATUS_OK)
+//		{
+//			gss_release_buffer(&lmin_s, &goutbuf);
+//			return STATUS_ERROR;
+//		}
+//	}
+//	gss_release_buffer(&lmin_s, &goutbuf);
+//
+//	if (maj_stat != GSS_S_COMPLETE && maj_stat != GSS_S_CONTINUE_NEEDED)
+//	{
+//		pg_GSS_error(libpq_gettext("GSSAPI continuation error"),
+//					 conn,
+//					 maj_stat, min_stat);
+//		gss_release_name(&lmin_s, &conn->gtarg_nam);
+//		if (conn->gctx)
+//			gss_delete_sec_context(&lmin_s, &conn->gctx, GSS_C_NO_BUFFER);
+//		return STATUS_ERROR;
+//	}
+//
+//	if (maj_stat == GSS_S_COMPLETE)
+//		gss_release_name(&lmin_s, &conn->gtarg_nam);
+//
+//	return STATUS_OK;
+//}
+//
+///*
+// * Send initial GSS authentication token
+// */
+//static int
+//pg_GSS_startup(PGconn *conn, int payloadlen)
+//{
+//	int			ret;
+//	char	   *host = conn->connhost[conn->whichhost].host;
+//
+//	if (!(host && host[0] != '\0'))
+//	{
+//		printfPQExpBuffer(&conn->errorMessage,
+//						  libpq_gettext("host name must be specified\n"));
+//		return STATUS_ERROR;
+//	}
+//
+//	if (conn->gctx)
+//	{
+//		printfPQExpBuffer(&conn->errorMessage,
+//						  libpq_gettext("duplicate GSS authentication request\n"));
+//		return STATUS_ERROR;
+//	}
+//
+//	ret = pg_GSS_load_servicename(conn);
+//	if (ret != STATUS_OK)
+//		return ret;
+//
+//	/*
+//	 * Initial packet is the same as a continuation packet with no initial
+//	 * context.
+//	 */
+//	conn->gctx = GSS_C_NO_CONTEXT;
+//
+//	return pg_GSS_continue(conn, payloadlen);
+//}
 #endif							/* ENABLE_GSS */
 
 
@@ -900,12 +901,12 @@ pg_fe_sendauth(AuthRequest areq, int payloadlen, PGconn *conn)
 				 * protocol, we use AUTH_REQ_SSPI.
 				 */
 #if defined(ENABLE_GSS) && defined(ENABLE_SSPI)
-				if (conn->gsslib && (pg_strcasecmp(conn->gsslib, "gssapi") == 0))
-					r = pg_GSS_startup(conn, payloadlen);
-				else
-					r = pg_SSPI_startup(conn, 0, payloadlen);
+//				if (conn->gsslib && (pg_strcasecmp(conn->gsslib, "gssapi") == 0))
+//					r = pg_GSS_startup(conn, payloadlen);
+//				else
+//					r = pg_SSPI_startup(conn, 0, payloadlen);
 #elif defined(ENABLE_GSS) && !defined(ENABLE_SSPI)
-				r = pg_GSS_startup(conn, payloadlen);
+//				r = pg_GSS_startup(conn, payloadlen);
 #elif !defined(ENABLE_GSS) && defined(ENABLE_SSPI)
 				r = pg_SSPI_startup(conn, 0, payloadlen);
 #endif
@@ -925,12 +926,12 @@ pg_fe_sendauth(AuthRequest areq, int payloadlen, PGconn *conn)
 
 				pglock_thread();
 #if defined(ENABLE_GSS) && defined(ENABLE_SSPI)
-				if (conn->usesspi)
-					r = pg_SSPI_continue(conn, payloadlen);
-				else
-					r = pg_GSS_continue(conn, payloadlen);
+//				if (conn->usesspi)
+//					r = pg_SSPI_continue(conn, payloadlen);
+//				else
+//					r = pg_GSS_continue(conn, payloadlen);
 #elif defined(ENABLE_GSS) && !defined(ENABLE_SSPI)
-				r = pg_GSS_continue(conn, payloadlen);
+//				r = pg_GSS_continue(conn, payloadlen);
 #elif !defined(ENABLE_GSS) && defined(ENABLE_SSPI)
 				r = pg_SSPI_continue(conn, payloadlen);
 #endif
