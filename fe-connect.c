@@ -12,7 +12,7 @@
  *
  *-------------------------------------------------------------------------
  */
-
+#include "pg_config.h"
 #include "postgres_fe.h"
 
 #include <sys/stat.h>

@@ -16,7 +16,7 @@
  *
  *-------------------------------------------------------------------------
  */
-
+#include "pg_config.h"
 #ifndef LIBPQ_INT_H
 #define LIBPQ_INT_H
 

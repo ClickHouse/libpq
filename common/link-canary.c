@@ -10,7 +10,7 @@
  *-------------------------------------------------------------------------
  */
 #include "c.h"
-
+#include "pg_config.h"
 #include "common/link-canary.h"
 
 /*

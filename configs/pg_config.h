@@ -50,7 +50,7 @@
 #define DEF_PGPORT_STR "5432"
 
 /* Define to build with GSSAPI support. (--with-gssapi) */
-#define ENABLE_GSS 0
+//#define ENABLE_GSS 0
 
 /* Define to 1 if you want National Language Support. (--enable-nls) */
 /* #undef ENABLE_NLS */
@@ -233,7 +233,7 @@
 /* #undef HAVE_GETTIMEOFDAY */
 
 /* Define to 1 if you have the <gssapi/gssapi.h> header file. */
-#define HAVE_GSSAPI_GSSAPI_H 0
+//#define HAVE_GSSAPI_GSSAPI_H 0
 
 /* Define to 1 if you have the <gssapi.h> header file. */
 /* #undef HAVE_GSSAPI_H */
@@ -284,16 +284,16 @@
 #define HAVE_LANGINFO_H 1
 
 /* Define to 1 if you have the <ldap.h> header file. */
-#define HAVE_LDAP_H 1
+//#define HAVE_LDAP_H 0
 
 /* Define to 1 if you have the `crypto' library (-lcrypto). */
 #define HAVE_LIBCRYPTO 1
 
 /* Define to 1 if you have the `ldap' library (-lldap). */
-#define HAVE_LIBLDAP 1
+//#define HAVE_LIBLDAP 0
 
 /* Define to 1 if you have the `ldap_r' library (-lldap_r). */
-#define HAVE_LIBLDAP_R 1
+#define HAVE_LIBLDAP_R 0
 
 /* Define to 1 if you have the `m' library (-lm). */
 #define HAVE_LIBM 1
@@ -584,6 +584,7 @@
 
 /* Define to 1 if you have the <sys/un.h> header file. */
 #define HAVE_SYS_UN_H 1
+#define _GNU_SOURCE 1 /* Needed for glibc struct ucred */
 
 /* Define to 1 if you have the <termios.h> header file. */
 #define HAVE_TERMIOS_H 1
@@ -807,7 +808,7 @@
 #define USE_INTEGER_DATETIMES 1
 
 /* Define to 1 to build with LDAP support. (--with-ldap) */
-#define USE_LDAP 1
+//#define USE_LDAP 0
 
 /* Define to 1 to build with XML support. (--with-libxml) */
 #define USE_LIBXML 1

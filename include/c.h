@@ -51,7 +51,7 @@
 /* Must undef pg_config_ext.h symbols before including pg_config.h */
 #undef PG_INT64_TYPE
 
-#include "linux/pg_config.h"
+#include "pg_config.h"
 #include "pg_config_manual.h"	/* must be after pg_config.h */
 #include "pg_config_os.h"		/* must be before any system header files */
 
