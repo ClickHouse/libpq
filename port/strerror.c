@@ -64,8 +64,8 @@ pg_strerror_r(int errnum, char *buf, size_t buflen)
 	 * the codeset specified by LC_CTYPE.  If we get nothing useful, first try
 	 * get_errno_symbol(), and if that fails, print the numeric errno.
 	 */
-	if (str == NULL || *str == '\0' || *str == '?')
-		str = get_errno_symbol(errnum);
+	//if (str == NULL || *str == '\0' || *str == '?')
+    str = get_errno_symbol(errnum);
 
 	if (str == NULL)
 	{
