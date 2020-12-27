@@ -827,8 +827,6 @@
 
 #define HAVE_BIO_GET_DATA 0
 
-#define HAVE_BIO_METH_NEW 0
-
 #define FRONTEND 1
 
 /* Define to 1 to build with PAM support. (--with-pam) */
