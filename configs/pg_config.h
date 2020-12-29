@@ -215,9 +215,7 @@
 #define HAVE_GETOPT_LONG 1
 
 /* Define to 1 if you have the `getpeereid' function. */
-#if defined(OS_DARWIN) || defined(OS_FREEBSD)
-#define HAVE_GETPEEREID 1
-#endif
+/* #undef HAVE_GETPEEREID */
 
 /* Define to 1 if you have the `getpeerucred' function. */
 /* #undef HAVE_GETPEERUCRED */
