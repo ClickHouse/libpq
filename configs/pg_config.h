@@ -489,7 +489,9 @@
 /* Define to 1 if you have the `strtoll' function. */
 #define HAVE_STRTOLL 1
 
+#if (!OS_DARWIN)
 #define HAVE_STRCHRNUL 1
+#endif
 
 /* Define to 1 if you have the `strtoq' function. */
 /* #undef HAVE_STRTOQ */
