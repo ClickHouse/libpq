@@ -431,11 +431,11 @@ extern ssize_t pg_pread(int fd, void *buf, size_t nbyte, off_t offset);
 extern ssize_t pg_pwrite(int fd, const void *buf, size_t nbyte, off_t offset);
 #endif
 
-#if !HAVE_DECL_STRLCAT
+#if !HAVE_DECL_STRLCAT && !defined(strlcat)
 extern size_t strlcat(char *dst, const char *src, size_t siz);
 #endif
 
-#if !HAVE_DECL_STRLCPY
+#if !HAVE_DECL_STRLCPY && !defined(strlcpy)
 extern size_t strlcpy(char *dst, const char *src, size_t siz);
 #endif
 
