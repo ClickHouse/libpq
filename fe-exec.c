@@ -46,8 +46,8 @@ char	   *const pgresStatus[] = {
  * static state needed by PQescapeString and PQescapeBytea; initialize to
  * values that result in backward-compatible behavior
  */
-static int	static_client_encoding = PG_SQL_ASCII;
-static bool static_std_strings = false;
+static _Atomic int	static_client_encoding = PG_SQL_ASCII;
+static _Atomic bool static_std_strings = false;
 
 
 static PGEvent *dupEvents(PGEvent *events, int count, size_t *memSize);
