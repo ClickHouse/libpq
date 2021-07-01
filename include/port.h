@@ -3,7 +3,7 @@
  * port.h
  *	  Header for src/port/ compatibility functions.
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * src/include/port.h
@@ -125,6 +125,7 @@ extern void pgfnames_cleanup(char **filenames);
 extern void set_pglocale_pgservice(const char *argv0, const char *app);
 
 /* Portable way to find and execute binaries (in exec.c) */
+extern int	validate_exec(const char *path);
 extern int	find_my_exec(const char *argv0, char *retpath);
 extern int	find_other_exec(const char *argv0, const char *target,
 							const char *versionstr, char *retpath);
@@ -431,6 +432,8 @@ extern ssize_t pg_pread(int fd, void *buf, size_t nbyte, off_t offset);
 extern ssize_t pg_pwrite(int fd, const void *buf, size_t nbyte, off_t offset);
 #endif
 
+/* For pg_pwritev() and pg_preadv(), see port/pg_iovec.h. */
+
 #if !HAVE_DECL_STRLCAT
 extern size_t strlcat(char *dst, const char *src, size_t siz);
 #endif
@@ -447,8 +450,12 @@ extern size_t strnlen(const char *str, size_t maxlen);
 extern long random(void);
 #endif
 
+#ifndef HAVE_SETENV
+extern int	setenv(const char *name, const char *value, int overwrite);
+#endif
+
 #ifndef HAVE_UNSETENV
-extern void unsetenv(const char *name);
+extern int	unsetenv(const char *name);
 #endif
 
 #ifndef HAVE_SRANDOM
@@ -501,6 +508,11 @@ typedef int (*qsort_arg_comparator) (const void *a, const void *b, void *arg);
 extern void qsort_arg(void *base, size_t nel, size_t elsize,
 					  qsort_arg_comparator cmp, void *arg);
 
+extern void *bsearch_arg(const void *key, const void *base,
+						 size_t nmemb, size_t size,
+						 int (*compar) (const void *, const void *, void *),
+						 void *arg);
+
 /* port/chklocale.c */
 extern int	pg_get_encoding_from_locale(const char *ctype, bool write_message);
 
@@ -513,6 +525,7 @@ extern char *pg_inet_net_ntop(int af, const void *src, int bits,
 							  char *dst, size_t size);
 
 /* port/pg_strong_random.c */
+extern void pg_strong_random_init(void);
 extern bool pg_strong_random(void *buf, size_t len);
 
 /*

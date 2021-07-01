@@ -6,7 +6,7 @@
  *	   including date, and time.
  *
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * src/include/utils/datetime.h
@@ -207,25 +207,25 @@ struct tzEntry;
 /* keep this struct small; it gets used a lot */
 typedef struct
 {
-    char		token[TOKMAXLEN + 1];	/* always NUL-terminated */
-    char		type;			/* see field type codes above */
-    int32		value;			/* meaning depends on type */
+	char		token[TOKMAXLEN + 1];	/* always NUL-terminated */
+	char		type;			/* see field type codes above */
+	int32		value;			/* meaning depends on type */
 } datetkn;
 
 /* one of its uses is in tables of time zone abbreviations */
 typedef struct TimeZoneAbbrevTable
 {
-    Size		tblsize;		/* size in bytes of TimeZoneAbbrevTable */
-    int			numabbrevs;		/* number of entries in abbrevs[] array */
-    datetkn		abbrevs[FLEXIBLE_ARRAY_MEMBER];
-    /* DynamicZoneAbbrev(s) may follow the abbrevs[] array */
+	Size		tblsize;		/* size in bytes of TimeZoneAbbrevTable */
+	int			numabbrevs;		/* number of entries in abbrevs[] array */
+	datetkn		abbrevs[FLEXIBLE_ARRAY_MEMBER];
+	/* DynamicZoneAbbrev(s) may follow the abbrevs[] array */
 } TimeZoneAbbrevTable;
 
 /* auxiliary data for a dynamic time zone abbreviation (non-fixed-offset) */
 typedef struct DynamicZoneAbbrev
 {
-    pg_tz	   *tz;				/* NULL if not yet looked up */
-    char		zone[FLEXIBLE_ARRAY_MEMBER];	/* NUL-terminated zone name */
+	pg_tz	   *tz;				/* NULL if not yet looked up */
+	char		zone[FLEXIBLE_ARRAY_MEMBER];	/* NUL-terminated zone name */
 } DynamicZoneAbbrev;
 
 
@@ -290,27 +290,27 @@ extern void j2date(int jd, int *year, int *month, int *day);
 extern int	date2j(int year, int month, int day);
 
 extern int	ParseDateTime(const char *timestr, char *workbuf, size_t buflen,
-                            char **field, int *ftype,
-                            int maxfields, int *numfields);
+						  char **field, int *ftype,
+						  int maxfields, int *numfields);
 extern int	DecodeDateTime(char **field, int *ftype,
-                             int nf, int *dtype,
-                             struct pg_tm *tm, fsec_t *fsec, int *tzp);
+						   int nf, int *dtype,
+						   struct pg_tm *tm, fsec_t *fsec, int *tzp);
 extern int	DecodeTimezone(char *str, int *tzp);
 extern int	DecodeTimeOnly(char **field, int *ftype,
-                             int nf, int *dtype,
-                             struct pg_tm *tm, fsec_t *fsec, int *tzp);
+						   int nf, int *dtype,
+						   struct pg_tm *tm, fsec_t *fsec, int *tzp);
 extern int	DecodeInterval(char **field, int *ftype, int nf, int range,
-                             int *dtype, struct pg_tm *tm, fsec_t *fsec);
+						   int *dtype, struct pg_tm *tm, fsec_t *fsec);
 extern int	DecodeISO8601Interval(char *str,
-                                    int *dtype, struct pg_tm *tm, fsec_t *fsec);
+								  int *dtype, struct pg_tm *tm, fsec_t *fsec);
 
 extern void DateTimeParseError(int dterr, const char *str,
-                               const char *datatype) pg_attribute_noreturn();
+							   const char *datatype) pg_attribute_noreturn();
 
 extern int	DetermineTimeZoneOffset(struct pg_tm *tm, pg_tz *tzp);
 extern int	DetermineTimeZoneAbbrevOffset(struct pg_tm *tm, const char *abbr, pg_tz *tzp);
 extern int	DetermineTimeZoneAbbrevOffsetTS(TimestampTz ts, const char *abbr,
-                                              pg_tz *tzp, int *isdst);
+											pg_tz *tzp, int *isdst);
 
 extern void EncodeDateOnly(struct pg_tm *tm, int style, char *str);
 extern void EncodeTimeOnly(struct pg_tm *tm, fsec_t fsec, bool print_tz, int tz, int style, char *str);
@@ -319,10 +319,10 @@ extern void EncodeInterval(struct pg_tm *tm, fsec_t fsec, int style, char *str);
 extern void EncodeSpecialTimestamp(Timestamp dt, char *str);
 
 extern int	ValidateDate(int fmask, bool isjulian, bool is2digits, bool bc,
-                           struct pg_tm *tm);
+						 struct pg_tm *tm);
 
 extern int	DecodeTimezoneAbbrev(int field, char *lowtoken,
-                                   int *offset, pg_tz **tz);
+								 int *offset, pg_tz **tz);
 extern int	DecodeSpecial(int field, char *lowtoken, int *val);
 extern int	DecodeUnits(int field, char *lowtoken, int *val);
 
@@ -333,11 +333,11 @@ extern Node *TemporalSimplify(int32 max_precis, Node *node);
 extern bool CheckDateTokenTables(void);
 
 extern TimeZoneAbbrevTable *ConvertTimeZoneAbbrevs(struct tzEntry *abbrevs,
-                                                   int n);
+												   int n);
 extern void InstallTimeZoneAbbrevs(TimeZoneAbbrevTable *tbl);
 
 extern void AdjustTimestampForTypmod(Timestamp *time, int32 typmod);
 extern bool AdjustTimestampForTypmodError(Timestamp *time, int32 typmod,
-                                          bool *error);
+										  bool *error);
 
 #endif							/* DATETIME_H */

@@ -4,7 +4,7 @@
  *		string handling helpers
  *
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  *
@@ -30,16 +30,16 @@
 bool
 pg_str_endswith(const char *str, const char *end)
 {
-    size_t		slen = strlen(str);
-    size_t		elen = strlen(end);
+	size_t		slen = strlen(str);
+	size_t		elen = strlen(end);
 
-    /* can't be a postfix if longer */
-    if (elen > slen)
-        return false;
+	/* can't be a postfix if longer */
+	if (elen > slen)
+		return false;
 
-    /* compare the end of the strings */
-    str += slen - elen;
-    return strcmp(str, end) == 0;
+	/* compare the end of the strings */
+	str += slen - elen;
+	return strcmp(str, end) == 0;
 }
 
 
@@ -49,12 +49,12 @@ pg_str_endswith(const char *str, const char *end)
 int
 strtoint(const char *str, char **endptr, int base)
 {
-    long		val;
+	long		val;
 
-    val = strtol(str, endptr, base);
-    if (val != (int) val)
-        errno = ERANGE;
-    return (int) val;
+	val = strtol(str, endptr, base);
+	if (val != (int) val)
+		errno = ERANGE;
+	return (int) val;
 }
 
 
@@ -81,14 +81,30 @@ strtoint(const char *str, char **endptr, int base)
 void
 pg_clean_ascii(char *str)
 {
-    /* Only allow clean ASCII chars in the string */
-    char	   *p;
+	/* Only allow clean ASCII chars in the string */
+	char	   *p;
 
-    for (p = str; *p != '\0'; p++)
-    {
-        if (*p < 32 || *p > 126)
-            *p = '?';
-    }
+	for (p = str; *p != '\0'; p++)
+	{
+		if (*p < 32 || *p > 126)
+			*p = '?';
+	}
+}
+
+
+/*
+ * pg_is_ascii -- Check if string is made only of ASCII characters
+ */
+bool
+pg_is_ascii(const char *str)
+{
+	while (*str)
+	{
+		if (IS_HIGHBIT_SET(*str))
+			return false;
+		str++;
+	}
+	return true;
 }
 
 
@@ -104,11 +120,11 @@ pg_clean_ascii(char *str)
 int
 pg_strip_crlf(char *str)
 {
-    int			len = strlen(str);
+	int			len = strlen(str);
 
-    while (len > 0 && (str[len - 1] == '\n' ||
-                       str[len - 1] == '\r'))
-        str[--len] = '\0';
+	while (len > 0 && (str[len - 1] == '\n' ||
+					   str[len - 1] == '\r'))
+		str[--len] = '\0';
 
-    return len;
+	return len;
 }

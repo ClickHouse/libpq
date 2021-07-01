@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------
  * Logging framework for frontend programs
  *
- * Copyright (c) 2018-2020, PostgreSQL Global Development Group
+ * Copyright (c) 2018-2021, PostgreSQL Global Development Group
  *
  * src/common/logging.c
  *
@@ -196,7 +196,7 @@ pg_logging_set_locus_callback(void (*cb) (const char **filename, uint64 *lineno)
 }
 
 void
-pg_log_generic(enum pg_log_level level, const char * fmt,...)
+pg_log_generic(enum pg_log_level level, const char *fmt,...)
 {
 	va_list		ap;
 
@@ -206,7 +206,7 @@ pg_log_generic(enum pg_log_level level, const char * fmt,...)
 }
 
 void
-pg_log_generic_v(enum pg_log_level level, const char * fmt, va_list ap)
+pg_log_generic_v(enum pg_log_level level, const char *fmt, va_list ap)
 {
 	int			save_errno = errno;
 	const char *filename = NULL;
