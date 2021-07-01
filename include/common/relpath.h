@@ -3,7 +3,7 @@
  * relpath.h
  *		Declarations for GetRelationPath() and friends
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * src/include/common/relpath.h
@@ -39,17 +39,17 @@
  */
 typedef enum ForkNumber
 {
-    InvalidForkNumber = -1,
-    MAIN_FORKNUM = 0,
-    FSM_FORKNUM,
-    VISIBILITYMAP_FORKNUM,
-    INIT_FORKNUM
+	InvalidForkNumber = -1,
+	MAIN_FORKNUM = 0,
+	FSM_FORKNUM,
+	VISIBILITYMAP_FORKNUM,
+	INIT_FORKNUM
 
-    /*
-     * NOTE: if you add a new fork, change MAX_FORKNUM and possibly
-     * FORKNAMECHARS below, and update the forkNames array in
-     * src/common/relpath.c
-     */
+	/*
+	 * NOTE: if you add a new fork, change MAX_FORKNUM and possibly
+	 * FORKNAMECHARS below, and update the forkNames array in
+	 * src/common/relpath.c
+	 */
 } ForkNumber;
 
 #define MAX_FORKNUM		INIT_FORKNUM
@@ -67,7 +67,7 @@ extern int	forkname_chars(const char *str, ForkNumber *fork);
 extern char *GetDatabasePath(Oid dbNode, Oid spcNode);
 
 extern char *GetRelationPath(Oid dbNode, Oid spcNode, Oid relNode,
-                             int backendId, ForkNumber forkNumber);
+							 int backendId, ForkNumber forkNumber);
 
 /*
  * Wrapper macros for GetRelationPath.  Beware of multiple

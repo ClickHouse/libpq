@@ -7,7 +7,7 @@
  *	  of the API of the memory management subsystem.
  *
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * src/include/utils/memutils.h
@@ -78,15 +78,16 @@ extern void MemoryContextResetChildren(MemoryContext context);
 extern void MemoryContextDeleteChildren(MemoryContext context);
 extern void MemoryContextSetIdentifier(MemoryContext context, const char *id);
 extern void MemoryContextSetParent(MemoryContext context,
-MemoryContext new_parent);
+								   MemoryContext new_parent);
 extern Size GetMemoryChunkSpace(void *pointer);
 extern MemoryContext MemoryContextGetParent(MemoryContext context);
 extern bool MemoryContextIsEmpty(MemoryContext context);
 extern Size MemoryContextMemAllocated(MemoryContext context, bool recurse);
 extern void MemoryContextStats(MemoryContext context);
-extern void MemoryContextStatsDetail(MemoryContext context, int max_children);
+extern void MemoryContextStatsDetail(MemoryContext context, int max_children,
+									 bool print_to_stderr);
 extern void MemoryContextAllowInCriticalSection(MemoryContext context,
-bool allow);
+												bool allow);
 
 #ifdef MEMORY_CONTEXT_CHECKING
 extern void MemoryContextCheck(MemoryContext context);
@@ -112,24 +113,24 @@ extern bool MemoryContextContains(MemoryContext context, void *pointer);
 static inline MemoryContext
 GetMemoryChunkContext(void *pointer)
 {
-    MemoryContext context;
+	MemoryContext context;
 
-    /*
-     * Try to detect bogus pointers handed to us, poorly though we can.
-     * Presumably, a pointer that isn't MAXALIGNED isn't pointing at an
-     * allocated chunk.
-     */
-    Assert(pointer != NULL);
-    Assert(pointer == (void *) MAXALIGN(pointer));
+	/*
+	 * Try to detect bogus pointers handed to us, poorly though we can.
+	 * Presumably, a pointer that isn't MAXALIGNED isn't pointing at an
+	 * allocated chunk.
+	 */
+	Assert(pointer != NULL);
+	Assert(pointer == (void *) MAXALIGN(pointer));
 
-    /*
-     * OK, it's probably safe to look at the context.
-     */
-    context = *(MemoryContext *) (((char *) pointer) - sizeof(void *));
+	/*
+	 * OK, it's probably safe to look at the context.
+	 */
+	context = *(MemoryContext *) (((char *) pointer) - sizeof(void *));
 
-    AssertArg(MemoryContextIsValid(context));
+	AssertArg(MemoryContextIsValid(context));
 
-    return context;
+	return context;
 }
 #endif
 
@@ -139,11 +140,13 @@ GetMemoryChunkContext(void *pointer)
  * specific creation routines, and noplace else.
  */
 extern void MemoryContextCreate(MemoryContext node,
-NodeTag tag,
-const MemoryContextMethods *methods,
-        MemoryContext parent,
-const char *name);
+								NodeTag tag,
+								const MemoryContextMethods *methods,
+								MemoryContext parent,
+								const char *name);
 
+extern void HandleLogMemoryContextInterrupt(void);
+extern void ProcessLogMemoryContextInterrupt(void);
 
 /*
  * Memory-context-type-specific functions
@@ -151,10 +154,10 @@ const char *name);
 
 /* aset.c */
 extern MemoryContext AllocSetContextCreateInternal(MemoryContext parent,
-const char *name,
-        Size minContextSize,
-Size initBlockSize,
-        Size maxBlockSize);
+												   const char *name,
+												   Size minContextSize,
+												   Size initBlockSize,
+												   Size maxBlockSize);
 
 /*
  * This wrapper macro exists to check for non-constant strings used as context
@@ -173,14 +176,14 @@ Size initBlockSize,
 
 /* slab.c */
 extern MemoryContext SlabContextCreate(MemoryContext parent,
-const char *name,
-        Size blockSize,
-Size chunkSize);
+									   const char *name,
+									   Size blockSize,
+									   Size chunkSize);
 
 /* generation.c */
 extern MemoryContext GenerationContextCreate(MemoryContext parent,
-const char *name,
-        Size blockSize);
+											 const char *name,
+											 Size blockSize);
 
 /*
  * Recommended default alloc parameters, suitable for "ordinary" contexts

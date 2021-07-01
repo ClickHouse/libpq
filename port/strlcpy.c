@@ -3,7 +3,7 @@
  * strlcpy.c
  *	  strncpy done right
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  *
  *
  * IDENTIFICATION
@@ -31,8 +31,6 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
-#if !OS_DARWIN
 
 #include "c.h"
 
@@ -71,5 +69,3 @@ strlcpy(char *dst, const char *src, size_t siz)
 
 	return (s - src - 1);		/* count does not include NUL */
 }
-
-#endif

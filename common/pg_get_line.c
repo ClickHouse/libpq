@@ -3,7 +3,7 @@
  * pg_get_line.c
  *	  fgets() with an expansible result buffer
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  *
@@ -51,21 +51,21 @@
 char *
 pg_get_line(FILE *stream)
 {
-    StringInfoData buf;
+	StringInfoData buf;
 
-    initStringInfo(&buf);
+	initStringInfo(&buf);
 
-    if (!pg_get_line_append(stream, &buf))
-    {
-        /* ensure that free() doesn't mess up errno */
-        int			save_errno = errno;
+	if (!pg_get_line_append(stream, &buf))
+	{
+		/* ensure that free() doesn't mess up errno */
+		int			save_errno = errno;
 
-        pfree(buf.data);
-        errno = save_errno;
-        return NULL;
-    }
+		pfree(buf.data);
+		errno = save_errno;
+		return NULL;
+	}
 
-    return buf.data;
+	return buf.data;
 }
 
 /*
@@ -87,9 +87,9 @@ pg_get_line(FILE *stream)
 bool
 pg_get_line_buf(FILE *stream, StringInfo buf)
 {
-    /* We just need to drop any data from the previous call */
-    resetStringInfo(buf);
-    return pg_get_line_append(stream, buf);
+	/* We just need to drop any data from the previous call */
+	resetStringInfo(buf);
+	return pg_get_line_append(stream, buf);
 }
 
 /*
@@ -111,30 +111,30 @@ pg_get_line_buf(FILE *stream, StringInfo buf)
 bool
 pg_get_line_append(FILE *stream, StringInfo buf)
 {
-    int			orig_len = buf->len;
+	int			orig_len = buf->len;
 
-    /* Read some data, appending it to whatever we already have */
-    while (fgets(buf->data + buf->len, buf->maxlen - buf->len, stream) != NULL)
-    {
-        buf->len += strlen(buf->data + buf->len);
+	/* Read some data, appending it to whatever we already have */
+	while (fgets(buf->data + buf->len, buf->maxlen - buf->len, stream) != NULL)
+	{
+		buf->len += strlen(buf->data + buf->len);
 
-        /* Done if we have collected a newline */
-        if (buf->len > orig_len && buf->data[buf->len - 1] == '\n')
-            return true;
+		/* Done if we have collected a newline */
+		if (buf->len > orig_len && buf->data[buf->len - 1] == '\n')
+			return true;
 
-        /* Make some more room in the buffer, and loop to read more data */
-        enlargeStringInfo(buf, 128);
-    }
+		/* Make some more room in the buffer, and loop to read more data */
+		enlargeStringInfo(buf, 128);
+	}
 
-    /* Check for I/O errors and EOF */
-    if (ferror(stream) || buf->len == orig_len)
-    {
-        /* Discard any data we collected before detecting error */
-        buf->len = orig_len;
-        buf->data[orig_len] = '\0';
-        return false;
-    }
+	/* Check for I/O errors and EOF */
+	if (ferror(stream) || buf->len == orig_len)
+	{
+		/* Discard any data we collected before detecting error */
+		buf->len = orig_len;
+		buf->data[orig_len] = '\0';
+		return false;
+	}
 
-    /* No newline at EOF, but we did collect some data */
-    return true;
+	/* No newline at EOF, but we did collect some data */
+	return true;
 }

@@ -3,7 +3,7 @@
  * strerror.c
  *	  Replacements for standard strerror() and strerror_r() functions
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  *
@@ -64,8 +64,8 @@ pg_strerror_r(int errnum, char *buf, size_t buflen)
 	 * the codeset specified by LC_CTYPE.  If we get nothing useful, first try
 	 * get_errno_symbol(), and if that fails, print the numeric errno.
 	 */
-	//if (str == NULL || *str == '\0' || *str == '?')
-    str = get_errno_symbol(errnum);
+	if (str == NULL || *str == '\0' || *str == '?')
+		str = get_errno_symbol(errnum);
 
 	if (str == NULL)
 	{

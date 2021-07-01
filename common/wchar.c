@@ -3,7 +3,7 @@
  * wchar.c
  *	  Functions for working with multibyte characters in various encodings.
  *
- * Portions Copyright (c) 1998-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1998-2021, PostgreSQL Global Development Group
  *
  * IDENTIFICATION
  *	  src/common/wchar.c
@@ -19,9 +19,9 @@
  * Operations on multi-byte encodings are driven by a table of helper
  * functions.
  *
- * To add an encoding support, define mblen(), dsplen() and verifier() for
- * the encoding.  For server-encodings, also define mb2wchar() and wchar2mb()
- * conversion functions.
+ * To add an encoding support, define mblen(), dsplen(), verifychar() and
+ * verifystr() for the encoding.  For server-encodings, also define mb2wchar()
+ * and wchar2mb() conversion functions.
  *
  * These functions generally assume that their input is validly formed.
  * The "verifier" functions, further down in the file, have to be more
@@ -47,33 +47,33 @@
 static int
 pg_ascii2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        *to++ = *from++;
-        len--;
-        cnt++;
-    }
-    *to = 0;
-    return cnt;
+	while (len > 0 && *from)
+	{
+		*to++ = *from++;
+		len--;
+		cnt++;
+	}
+	*to = 0;
+	return cnt;
 }
 
 static int
 pg_ascii_mblen(const unsigned char *s)
 {
-    return 1;
+	return 1;
 }
 
 static int
 pg_ascii_dsplen(const unsigned char *s)
 {
-    if (*s == '\0')
-        return 0;
-    if (*s < 0x20 || *s == 0x7f)
-        return -1;
+	if (*s == '\0')
+		return 0;
+	if (*s < 0x20 || *s == 0x7f)
+		return -1;
 
-    return 1;
+	return 1;
 }
 
 /*
@@ -82,72 +82,72 @@ pg_ascii_dsplen(const unsigned char *s)
 static int
 pg_euc2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        if (*from == SS2 && len >= 2)	/* JIS X 0201 (so called "1 byte
+	while (len > 0 && *from)
+	{
+		if (*from == SS2 && len >= 2)	/* JIS X 0201 (so called "1 byte
 										 * KANA") */
-        {
-            from++;
-            *to = (SS2 << 8) | *from++;
-            len -= 2;
-        }
-        else if (*from == SS3 && len >= 3)	/* JIS X 0212 KANJI */
-        {
-            from++;
-            *to = (SS3 << 16) | (*from++ << 8);
-            *to |= *from++;
-            len -= 3;
-        }
-        else if (IS_HIGHBIT_SET(*from) && len >= 2) /* JIS X 0208 KANJI */
-        {
-            *to = *from++ << 8;
-            *to |= *from++;
-            len -= 2;
-        }
-        else					/* must be ASCII */
-        {
-            *to = *from++;
-            len--;
-        }
-        to++;
-        cnt++;
-    }
-    *to = 0;
-    return cnt;
+		{
+			from++;
+			*to = (SS2 << 8) | *from++;
+			len -= 2;
+		}
+		else if (*from == SS3 && len >= 3)	/* JIS X 0212 KANJI */
+		{
+			from++;
+			*to = (SS3 << 16) | (*from++ << 8);
+			*to |= *from++;
+			len -= 3;
+		}
+		else if (IS_HIGHBIT_SET(*from) && len >= 2) /* JIS X 0208 KANJI */
+		{
+			*to = *from++ << 8;
+			*to |= *from++;
+			len -= 2;
+		}
+		else					/* must be ASCII */
+		{
+			*to = *from++;
+			len--;
+		}
+		to++;
+		cnt++;
+	}
+	*to = 0;
+	return cnt;
 }
 
 static inline int
 pg_euc_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (*s == SS2)
-        len = 2;
-    else if (*s == SS3)
-        len = 3;
-    else if (IS_HIGHBIT_SET(*s))
-        len = 2;
-    else
-        len = 1;
-    return len;
+	if (*s == SS2)
+		len = 2;
+	else if (*s == SS3)
+		len = 3;
+	else if (IS_HIGHBIT_SET(*s))
+		len = 2;
+	else
+		len = 1;
+	return len;
 }
 
 static inline int
 pg_euc_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (*s == SS2)
-        len = 2;
-    else if (*s == SS3)
-        len = 2;
-    else if (IS_HIGHBIT_SET(*s))
-        len = 2;
-    else
-        len = pg_ascii_dsplen(s);
-    return len;
+	if (*s == SS2)
+		len = 2;
+	else if (*s == SS3)
+		len = 2;
+	else if (IS_HIGHBIT_SET(*s))
+		len = 2;
+	else
+		len = pg_ascii_dsplen(s);
+	return len;
 }
 
 /*
@@ -156,29 +156,29 @@ pg_euc_dsplen(const unsigned char *s)
 static int
 pg_eucjp2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 {
-    return pg_euc2wchar_with_len(from, to, len);
+	return pg_euc2wchar_with_len(from, to, len);
 }
 
 static int
 pg_eucjp_mblen(const unsigned char *s)
 {
-    return pg_euc_mblen(s);
+	return pg_euc_mblen(s);
 }
 
 static int
 pg_eucjp_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (*s == SS2)
-        len = 1;
-    else if (*s == SS3)
-        len = 2;
-    else if (IS_HIGHBIT_SET(*s))
-        len = 2;
-    else
-        len = pg_ascii_dsplen(s);
-    return len;
+	if (*s == SS2)
+		len = 1;
+	else if (*s == SS3)
+		len = 2;
+	else if (IS_HIGHBIT_SET(*s))
+		len = 2;
+	else
+		len = pg_ascii_dsplen(s);
+	return len;
 }
 
 /*
@@ -187,19 +187,19 @@ pg_eucjp_dsplen(const unsigned char *s)
 static int
 pg_euckr2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 {
-    return pg_euc2wchar_with_len(from, to, len);
+	return pg_euc2wchar_with_len(from, to, len);
 }
 
 static int
 pg_euckr_mblen(const unsigned char *s)
 {
-    return pg_euc_mblen(s);
+	return pg_euc_mblen(s);
 }
 
 static int
 pg_euckr_dsplen(const unsigned char *s)
 {
-    return pg_euc_dsplen(s);
+	return pg_euc_dsplen(s);
 }
 
 /*
@@ -209,64 +209,64 @@ pg_euckr_dsplen(const unsigned char *s)
 static int
 pg_euccn2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        if (*from == SS2 && len >= 3)	/* code set 2 (unused?) */
-        {
-            from++;
-            *to = (SS2 << 16) | (*from++ << 8);
-            *to |= *from++;
-            len -= 3;
-        }
-        else if (*from == SS3 && len >= 3)	/* code set 3 (unused ?) */
-        {
-            from++;
-            *to = (SS3 << 16) | (*from++ << 8);
-            *to |= *from++;
-            len -= 3;
-        }
-        else if (IS_HIGHBIT_SET(*from) && len >= 2) /* code set 1 */
-        {
-            *to = *from++ << 8;
-            *to |= *from++;
-            len -= 2;
-        }
-        else
-        {
-            *to = *from++;
-            len--;
-        }
-        to++;
-        cnt++;
-    }
-    *to = 0;
-    return cnt;
+	while (len > 0 && *from)
+	{
+		if (*from == SS2 && len >= 3)	/* code set 2 (unused?) */
+		{
+			from++;
+			*to = (SS2 << 16) | (*from++ << 8);
+			*to |= *from++;
+			len -= 3;
+		}
+		else if (*from == SS3 && len >= 3)	/* code set 3 (unused ?) */
+		{
+			from++;
+			*to = (SS3 << 16) | (*from++ << 8);
+			*to |= *from++;
+			len -= 3;
+		}
+		else if (IS_HIGHBIT_SET(*from) && len >= 2) /* code set 1 */
+		{
+			*to = *from++ << 8;
+			*to |= *from++;
+			len -= 2;
+		}
+		else
+		{
+			*to = *from++;
+			len--;
+		}
+		to++;
+		cnt++;
+	}
+	*to = 0;
+	return cnt;
 }
 
 static int
 pg_euccn_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_HIGHBIT_SET(*s))
-        len = 2;
-    else
-        len = 1;
-    return len;
+	if (IS_HIGHBIT_SET(*s))
+		len = 2;
+	else
+		len = 1;
+	return len;
 }
 
 static int
 pg_euccn_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_HIGHBIT_SET(*s))
-        len = 2;
-    else
-        len = pg_ascii_dsplen(s);
-    return len;
+	if (IS_HIGHBIT_SET(*s))
+		len = 2;
+	else
+		len = pg_ascii_dsplen(s);
+	return len;
 }
 
 /*
@@ -276,73 +276,73 @@ pg_euccn_dsplen(const unsigned char *s)
 static int
 pg_euctw2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        if (*from == SS2 && len >= 4)	/* code set 2 */
-        {
-            from++;
-            *to = (((uint32) SS2) << 24) | (*from++ << 16);
-            *to |= *from++ << 8;
-            *to |= *from++;
-            len -= 4;
-        }
-        else if (*from == SS3 && len >= 3)	/* code set 3 (unused?) */
-        {
-            from++;
-            *to = (SS3 << 16) | (*from++ << 8);
-            *to |= *from++;
-            len -= 3;
-        }
-        else if (IS_HIGHBIT_SET(*from) && len >= 2) /* code set 2 */
-        {
-            *to = *from++ << 8;
-            *to |= *from++;
-            len -= 2;
-        }
-        else
-        {
-            *to = *from++;
-            len--;
-        }
-        to++;
-        cnt++;
-    }
-    *to = 0;
-    return cnt;
+	while (len > 0 && *from)
+	{
+		if (*from == SS2 && len >= 4)	/* code set 2 */
+		{
+			from++;
+			*to = (((uint32) SS2) << 24) | (*from++ << 16);
+			*to |= *from++ << 8;
+			*to |= *from++;
+			len -= 4;
+		}
+		else if (*from == SS3 && len >= 3)	/* code set 3 (unused?) */
+		{
+			from++;
+			*to = (SS3 << 16) | (*from++ << 8);
+			*to |= *from++;
+			len -= 3;
+		}
+		else if (IS_HIGHBIT_SET(*from) && len >= 2) /* code set 2 */
+		{
+			*to = *from++ << 8;
+			*to |= *from++;
+			len -= 2;
+		}
+		else
+		{
+			*to = *from++;
+			len--;
+		}
+		to++;
+		cnt++;
+	}
+	*to = 0;
+	return cnt;
 }
 
 static int
 pg_euctw_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (*s == SS2)
-        len = 4;
-    else if (*s == SS3)
-        len = 3;
-    else if (IS_HIGHBIT_SET(*s))
-        len = 2;
-    else
-        len = 1;
-    return len;
+	if (*s == SS2)
+		len = 4;
+	else if (*s == SS3)
+		len = 3;
+	else if (IS_HIGHBIT_SET(*s))
+		len = 2;
+	else
+		len = 1;
+	return len;
 }
 
 static int
 pg_euctw_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (*s == SS2)
-        len = 2;
-    else if (*s == SS3)
-        len = 2;
-    else if (IS_HIGHBIT_SET(*s))
-        len = 2;
-    else
-        len = pg_ascii_dsplen(s);
-    return len;
+	if (*s == SS2)
+		len = 2;
+	else if (*s == SS3)
+		len = 2;
+	else if (IS_HIGHBIT_SET(*s))
+		len = 2;
+	else
+		len = pg_ascii_dsplen(s);
+	return len;
 }
 
 /*
@@ -354,43 +354,43 @@ pg_euctw_dsplen(const unsigned char *s)
 static int
 pg_wchar2euc_with_len(const pg_wchar *from, unsigned char *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        unsigned char c;
+	while (len > 0 && *from)
+	{
+		unsigned char c;
 
-        if ((c = (*from >> 24)))
-        {
-            *to++ = c;
-            *to++ = (*from >> 16) & 0xff;
-            *to++ = (*from >> 8) & 0xff;
-            *to++ = *from & 0xff;
-            cnt += 4;
-        }
-        else if ((c = (*from >> 16)))
-        {
-            *to++ = c;
-            *to++ = (*from >> 8) & 0xff;
-            *to++ = *from & 0xff;
-            cnt += 3;
-        }
-        else if ((c = (*from >> 8)))
-        {
-            *to++ = c;
-            *to++ = *from & 0xff;
-            cnt += 2;
-        }
-        else
-        {
-            *to++ = *from;
-            cnt++;
-        }
-        from++;
-        len--;
-    }
-    *to = 0;
-    return cnt;
+		if ((c = (*from >> 24)))
+		{
+			*to++ = c;
+			*to++ = (*from >> 16) & 0xff;
+			*to++ = (*from >> 8) & 0xff;
+			*to++ = *from & 0xff;
+			cnt += 4;
+		}
+		else if ((c = (*from >> 16)))
+		{
+			*to++ = c;
+			*to++ = (*from >> 8) & 0xff;
+			*to++ = *from & 0xff;
+			cnt += 3;
+		}
+		else if ((c = (*from >> 8)))
+		{
+			*to++ = c;
+			*to++ = *from & 0xff;
+			cnt += 2;
+		}
+		else
+		{
+			*to++ = *from;
+			cnt++;
+		}
+		from++;
+		len--;
+	}
+	*to = 0;
+	return cnt;
 }
 
 
@@ -400,13 +400,13 @@ pg_wchar2euc_with_len(const pg_wchar *from, unsigned char *to, int len)
 static int
 pg_johab_mblen(const unsigned char *s)
 {
-    return pg_euc_mblen(s);
+	return pg_euc_mblen(s);
 }
 
 static int
 pg_johab_dsplen(const unsigned char *s)
 {
-    return pg_euc_dsplen(s);
+	return pg_euc_dsplen(s);
 }
 
 /*
@@ -418,60 +418,60 @@ pg_johab_dsplen(const unsigned char *s)
 static int
 pg_utf2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 {
-    int			cnt = 0;
-    uint32		c1,
-            c2,
-            c3,
-            c4;
+	int			cnt = 0;
+	uint32		c1,
+				c2,
+				c3,
+				c4;
 
-    while (len > 0 && *from)
-    {
-        if ((*from & 0x80) == 0)
-        {
-            *to = *from++;
-            len--;
-        }
-        else if ((*from & 0xe0) == 0xc0)
-        {
-            if (len < 2)
-                break;			/* drop trailing incomplete char */
-            c1 = *from++ & 0x1f;
-            c2 = *from++ & 0x3f;
-            *to = (c1 << 6) | c2;
-            len -= 2;
-        }
-        else if ((*from & 0xf0) == 0xe0)
-        {
-            if (len < 3)
-                break;			/* drop trailing incomplete char */
-            c1 = *from++ & 0x0f;
-            c2 = *from++ & 0x3f;
-            c3 = *from++ & 0x3f;
-            *to = (c1 << 12) | (c2 << 6) | c3;
-            len -= 3;
-        }
-        else if ((*from & 0xf8) == 0xf0)
-        {
-            if (len < 4)
-                break;			/* drop trailing incomplete char */
-            c1 = *from++ & 0x07;
-            c2 = *from++ & 0x3f;
-            c3 = *from++ & 0x3f;
-            c4 = *from++ & 0x3f;
-            *to = (c1 << 18) | (c2 << 12) | (c3 << 6) | c4;
-            len -= 4;
-        }
-        else
-        {
-            /* treat a bogus char as length 1; not ours to raise error */
-            *to = *from++;
-            len--;
-        }
-        to++;
-        cnt++;
-    }
-    *to = 0;
-    return cnt;
+	while (len > 0 && *from)
+	{
+		if ((*from & 0x80) == 0)
+		{
+			*to = *from++;
+			len--;
+		}
+		else if ((*from & 0xe0) == 0xc0)
+		{
+			if (len < 2)
+				break;			/* drop trailing incomplete char */
+			c1 = *from++ & 0x1f;
+			c2 = *from++ & 0x3f;
+			*to = (c1 << 6) | c2;
+			len -= 2;
+		}
+		else if ((*from & 0xf0) == 0xe0)
+		{
+			if (len < 3)
+				break;			/* drop trailing incomplete char */
+			c1 = *from++ & 0x0f;
+			c2 = *from++ & 0x3f;
+			c3 = *from++ & 0x3f;
+			*to = (c1 << 12) | (c2 << 6) | c3;
+			len -= 3;
+		}
+		else if ((*from & 0xf8) == 0xf0)
+		{
+			if (len < 4)
+				break;			/* drop trailing incomplete char */
+			c1 = *from++ & 0x07;
+			c2 = *from++ & 0x3f;
+			c3 = *from++ & 0x3f;
+			c4 = *from++ & 0x3f;
+			*to = (c1 << 18) | (c2 << 12) | (c3 << 6) | c4;
+			len -= 4;
+		}
+		else
+		{
+			/* treat a bogus char as length 1; not ours to raise error */
+			*to = *from++;
+			len--;
+		}
+		to++;
+		cnt++;
+	}
+	*to = 0;
+	return cnt;
 }
 
 
@@ -482,30 +482,30 @@ pg_utf2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 unsigned char *
 unicode_to_utf8(pg_wchar c, unsigned char *utf8string)
 {
-    if (c <= 0x7F)
-    {
-        utf8string[0] = c;
-    }
-    else if (c <= 0x7FF)
-    {
-        utf8string[0] = 0xC0 | ((c >> 6) & 0x1F);
-        utf8string[1] = 0x80 | (c & 0x3F);
-    }
-    else if (c <= 0xFFFF)
-    {
-        utf8string[0] = 0xE0 | ((c >> 12) & 0x0F);
-        utf8string[1] = 0x80 | ((c >> 6) & 0x3F);
-        utf8string[2] = 0x80 | (c & 0x3F);
-    }
-    else
-    {
-        utf8string[0] = 0xF0 | ((c >> 18) & 0x07);
-        utf8string[1] = 0x80 | ((c >> 12) & 0x3F);
-        utf8string[2] = 0x80 | ((c >> 6) & 0x3F);
-        utf8string[3] = 0x80 | (c & 0x3F);
-    }
+	if (c <= 0x7F)
+	{
+		utf8string[0] = c;
+	}
+	else if (c <= 0x7FF)
+	{
+		utf8string[0] = 0xC0 | ((c >> 6) & 0x1F);
+		utf8string[1] = 0x80 | (c & 0x3F);
+	}
+	else if (c <= 0xFFFF)
+	{
+		utf8string[0] = 0xE0 | ((c >> 12) & 0x0F);
+		utf8string[1] = 0x80 | ((c >> 6) & 0x3F);
+		utf8string[2] = 0x80 | (c & 0x3F);
+	}
+	else
+	{
+		utf8string[0] = 0xF0 | ((c >> 18) & 0x07);
+		utf8string[1] = 0x80 | ((c >> 12) & 0x3F);
+		utf8string[2] = 0x80 | ((c >> 6) & 0x3F);
+		utf8string[3] = 0x80 | (c & 0x3F);
+	}
 
-    return utf8string;
+	return utf8string;
 }
 
 /*
@@ -517,21 +517,21 @@ unicode_to_utf8(pg_wchar c, unsigned char *utf8string)
 static int
 pg_wchar2utf_with_len(const pg_wchar *from, unsigned char *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        int			char_len;
+	while (len > 0 && *from)
+	{
+		int			char_len;
 
-        unicode_to_utf8(*from, to);
-        char_len = pg_utf_mblen(to);
-        cnt += char_len;
-        to += char_len;
-        from++;
-        len--;
-    }
-    *to = 0;
-    return cnt;
+		unicode_to_utf8(*from, to);
+		char_len = pg_utf_mblen(to);
+		cnt += char_len;
+		to += char_len;
+		from++;
+		len--;
+	}
+	*to = 0;
+	return cnt;
 }
 
 /*
@@ -548,25 +548,25 @@ pg_wchar2utf_with_len(const pg_wchar *from, unsigned char *to, int len)
 int
 pg_utf_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if ((*s & 0x80) == 0)
-        len = 1;
-    else if ((*s & 0xe0) == 0xc0)
-        len = 2;
-    else if ((*s & 0xf0) == 0xe0)
-        len = 3;
-    else if ((*s & 0xf8) == 0xf0)
-        len = 4;
+	if ((*s & 0x80) == 0)
+		len = 1;
+	else if ((*s & 0xe0) == 0xc0)
+		len = 2;
+	else if ((*s & 0xf0) == 0xe0)
+		len = 3;
+	else if ((*s & 0xf8) == 0xf0)
+		len = 4;
 #ifdef NOT_USED
-        else if ((*s & 0xfc) == 0xf8)
+	else if ((*s & 0xfc) == 0xf8)
 		len = 5;
 	else if ((*s & 0xfe) == 0xfc)
 		len = 6;
 #endif
-    else
-        len = 1;
-    return len;
+	else
+		len = 1;
+	return len;
 }
 
 /*
@@ -583,31 +583,31 @@ pg_utf_mblen(const unsigned char *s)
 
 struct mbinterval
 {
-    unsigned short first;
-    unsigned short last;
+	unsigned short first;
+	unsigned short last;
 };
 
 /* auxiliary function for binary search in interval table */
 static int
 mbbisearch(pg_wchar ucs, const struct mbinterval *table, int max)
 {
-    int			min = 0;
-    int			mid;
+	int			min = 0;
+	int			mid;
 
-    if (ucs < table[0].first || ucs > table[max].last)
-        return 0;
-    while (max >= min)
-    {
-        mid = (min + max) / 2;
-        if (ucs > table[mid].last)
-            min = mid + 1;
-        else if (ucs < table[mid].first)
-            max = mid - 1;
-        else
-            return 1;
-    }
+	if (ucs < table[0].first || ucs > table[max].last)
+		return 0;
+	while (max >= min)
+	{
+		mid = (min + max) / 2;
+		if (ucs > table[mid].last)
+			min = mid + 1;
+		else if (ucs < table[mid].first)
+			max = mid - 1;
+		else
+			return 1;
+	}
 
-    return 0;
+	return 0;
 }
 
 
@@ -646,34 +646,34 @@ ucs_wcwidth(pg_wchar ucs)
 {
 #include "common/unicode_combining_table.h"
 
-    /* test for 8-bit control characters */
-    if (ucs == 0)
-        return 0;
+	/* test for 8-bit control characters */
+	if (ucs == 0)
+		return 0;
 
-    if (ucs < 0x20 || (ucs >= 0x7f && ucs < 0xa0) || ucs > 0x0010ffff)
-        return -1;
+	if (ucs < 0x20 || (ucs >= 0x7f && ucs < 0xa0) || ucs > 0x0010ffff)
+		return -1;
 
-    /* binary search in table of non-spacing characters */
-    if (mbbisearch(ucs, combining,
-                   sizeof(combining) / sizeof(struct mbinterval) - 1))
-        return 0;
+	/* binary search in table of non-spacing characters */
+	if (mbbisearch(ucs, combining,
+				   sizeof(combining) / sizeof(struct mbinterval) - 1))
+		return 0;
 
-    /*
-     * if we arrive here, ucs is not a combining or C0/C1 control character
-     */
+	/*
+	 * if we arrive here, ucs is not a combining or C0/C1 control character
+	 */
 
-    return 1 +
-           (ucs >= 0x1100 &&
-            (ucs <= 0x115f ||		/* Hangul Jamo init. consonants */
-             (ucs >= 0x2e80 && ucs <= 0xa4cf && (ucs & ~0x0011) != 0x300a &&
-              ucs != 0x303f) ||	/* CJK ... Yi */
-             (ucs >= 0xac00 && ucs <= 0xd7a3) ||	/* Hangul Syllables */
-             (ucs >= 0xf900 && ucs <= 0xfaff) ||	/* CJK Compatibility
+	return 1 +
+		(ucs >= 0x1100 &&
+		 (ucs <= 0x115f ||		/* Hangul Jamo init. consonants */
+		  (ucs >= 0x2e80 && ucs <= 0xa4cf && (ucs & ~0x0011) != 0x300a &&
+		   ucs != 0x303f) ||	/* CJK ... Yi */
+		  (ucs >= 0xac00 && ucs <= 0xd7a3) ||	/* Hangul Syllables */
+		  (ucs >= 0xf900 && ucs <= 0xfaff) ||	/* CJK Compatibility
 												 * Ideographs */
-             (ucs >= 0xfe30 && ucs <= 0xfe6f) ||	/* CJK Compatibility Forms */
-             (ucs >= 0xff00 && ucs <= 0xff5f) ||	/* Fullwidth Forms */
-             (ucs >= 0xffe0 && ucs <= 0xffe6) ||
-             (ucs >= 0x20000 && ucs <= 0x2ffff)));
+		  (ucs >= 0xfe30 && ucs <= 0xfe6f) ||	/* CJK Compatibility Forms */
+		  (ucs >= 0xff00 && ucs <= 0xff5f) ||	/* Fullwidth Forms */
+		  (ucs >= 0xffe0 && ucs <= 0xffe6) ||
+		  (ucs >= 0x20000 && ucs <= 0x2ffff)));
 }
 
 /*
@@ -685,29 +685,29 @@ ucs_wcwidth(pg_wchar ucs)
 pg_wchar
 utf8_to_unicode(const unsigned char *c)
 {
-    if ((*c & 0x80) == 0)
-        return (pg_wchar) c[0];
-    else if ((*c & 0xe0) == 0xc0)
-        return (pg_wchar) (((c[0] & 0x1f) << 6) |
-                           (c[1] & 0x3f));
-    else if ((*c & 0xf0) == 0xe0)
-        return (pg_wchar) (((c[0] & 0x0f) << 12) |
-                           ((c[1] & 0x3f) << 6) |
-                           (c[2] & 0x3f));
-    else if ((*c & 0xf8) == 0xf0)
-        return (pg_wchar) (((c[0] & 0x07) << 18) |
-                           ((c[1] & 0x3f) << 12) |
-                           ((c[2] & 0x3f) << 6) |
-                           (c[3] & 0x3f));
-    else
-        /* that is an invalid code on purpose */
-        return 0xffffffff;
+	if ((*c & 0x80) == 0)
+		return (pg_wchar) c[0];
+	else if ((*c & 0xe0) == 0xc0)
+		return (pg_wchar) (((c[0] & 0x1f) << 6) |
+						   (c[1] & 0x3f));
+	else if ((*c & 0xf0) == 0xe0)
+		return (pg_wchar) (((c[0] & 0x0f) << 12) |
+						   ((c[1] & 0x3f) << 6) |
+						   (c[2] & 0x3f));
+	else if ((*c & 0xf8) == 0xf0)
+		return (pg_wchar) (((c[0] & 0x07) << 18) |
+						   ((c[1] & 0x3f) << 12) |
+						   ((c[2] & 0x3f) << 6) |
+						   (c[3] & 0x3f));
+	else
+		/* that is an invalid code on purpose */
+		return 0xffffffff;
 }
 
 static int
 pg_utf_dsplen(const unsigned char *s)
 {
-    return ucs_wcwidth(utf8_to_unicode(s));
+	return ucs_wcwidth(utf8_to_unicode(s));
 }
 
 /*
@@ -719,48 +719,48 @@ pg_utf_dsplen(const unsigned char *s)
 static int
 pg_mule2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        if (IS_LC1(*from) && len >= 2)
-        {
-            *to = *from++ << 16;
-            *to |= *from++;
-            len -= 2;
-        }
-        else if (IS_LCPRV1(*from) && len >= 3)
-        {
-            from++;
-            *to = *from++ << 16;
-            *to |= *from++;
-            len -= 3;
-        }
-        else if (IS_LC2(*from) && len >= 3)
-        {
-            *to = *from++ << 16;
-            *to |= *from++ << 8;
-            *to |= *from++;
-            len -= 3;
-        }
-        else if (IS_LCPRV2(*from) && len >= 4)
-        {
-            from++;
-            *to = *from++ << 16;
-            *to |= *from++ << 8;
-            *to |= *from++;
-            len -= 4;
-        }
-        else
-        {						/* assume ASCII */
-            *to = (unsigned char) *from++;
-            len--;
-        }
-        to++;
-        cnt++;
-    }
-    *to = 0;
-    return cnt;
+	while (len > 0 && *from)
+	{
+		if (IS_LC1(*from) && len >= 2)
+		{
+			*to = *from++ << 16;
+			*to |= *from++;
+			len -= 2;
+		}
+		else if (IS_LCPRV1(*from) && len >= 3)
+		{
+			from++;
+			*to = *from++ << 16;
+			*to |= *from++;
+			len -= 3;
+		}
+		else if (IS_LC2(*from) && len >= 3)
+		{
+			*to = *from++ << 16;
+			*to |= *from++ << 8;
+			*to |= *from++;
+			len -= 3;
+		}
+		else if (IS_LCPRV2(*from) && len >= 4)
+		{
+			from++;
+			*to = *from++ << 16;
+			*to |= *from++ << 8;
+			*to |= *from++;
+			len -= 4;
+		}
+		else
+		{						/* assume ASCII */
+			*to = (unsigned char) *from++;
+			len--;
+		}
+		to++;
+		cnt++;
+	}
+	*to = 0;
+	return cnt;
 }
 
 /*
@@ -772,110 +772,110 @@ pg_mule2wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 static int
 pg_wchar2mule_with_len(const pg_wchar *from, unsigned char *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        unsigned char lb;
+	while (len > 0 && *from)
+	{
+		unsigned char lb;
 
-        lb = (*from >> 16) & 0xff;
-        if (IS_LC1(lb))
-        {
-            *to++ = lb;
-            *to++ = *from & 0xff;
-            cnt += 2;
-        }
-        else if (IS_LC2(lb))
-        {
-            *to++ = lb;
-            *to++ = (*from >> 8) & 0xff;
-            *to++ = *from & 0xff;
-            cnt += 3;
-        }
-        else if (IS_LCPRV1_A_RANGE(lb))
-        {
-            *to++ = LCPRV1_A;
-            *to++ = lb;
-            *to++ = *from & 0xff;
-            cnt += 3;
-        }
-        else if (IS_LCPRV1_B_RANGE(lb))
-        {
-            *to++ = LCPRV1_B;
-            *to++ = lb;
-            *to++ = *from & 0xff;
-            cnt += 3;
-        }
-        else if (IS_LCPRV2_A_RANGE(lb))
-        {
-            *to++ = LCPRV2_A;
-            *to++ = lb;
-            *to++ = (*from >> 8) & 0xff;
-            *to++ = *from & 0xff;
-            cnt += 4;
-        }
-        else if (IS_LCPRV2_B_RANGE(lb))
-        {
-            *to++ = LCPRV2_B;
-            *to++ = lb;
-            *to++ = (*from >> 8) & 0xff;
-            *to++ = *from & 0xff;
-            cnt += 4;
-        }
-        else
-        {
-            *to++ = *from & 0xff;
-            cnt += 1;
-        }
-        from++;
-        len--;
-    }
-    *to = 0;
-    return cnt;
+		lb = (*from >> 16) & 0xff;
+		if (IS_LC1(lb))
+		{
+			*to++ = lb;
+			*to++ = *from & 0xff;
+			cnt += 2;
+		}
+		else if (IS_LC2(lb))
+		{
+			*to++ = lb;
+			*to++ = (*from >> 8) & 0xff;
+			*to++ = *from & 0xff;
+			cnt += 3;
+		}
+		else if (IS_LCPRV1_A_RANGE(lb))
+		{
+			*to++ = LCPRV1_A;
+			*to++ = lb;
+			*to++ = *from & 0xff;
+			cnt += 3;
+		}
+		else if (IS_LCPRV1_B_RANGE(lb))
+		{
+			*to++ = LCPRV1_B;
+			*to++ = lb;
+			*to++ = *from & 0xff;
+			cnt += 3;
+		}
+		else if (IS_LCPRV2_A_RANGE(lb))
+		{
+			*to++ = LCPRV2_A;
+			*to++ = lb;
+			*to++ = (*from >> 8) & 0xff;
+			*to++ = *from & 0xff;
+			cnt += 4;
+		}
+		else if (IS_LCPRV2_B_RANGE(lb))
+		{
+			*to++ = LCPRV2_B;
+			*to++ = lb;
+			*to++ = (*from >> 8) & 0xff;
+			*to++ = *from & 0xff;
+			cnt += 4;
+		}
+		else
+		{
+			*to++ = *from & 0xff;
+			cnt += 1;
+		}
+		from++;
+		len--;
+	}
+	*to = 0;
+	return cnt;
 }
 
 /* exported for direct use by conv.c */
 int
 pg_mule_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_LC1(*s))
-        len = 2;
-    else if (IS_LCPRV1(*s))
-        len = 3;
-    else if (IS_LC2(*s))
-        len = 3;
-    else if (IS_LCPRV2(*s))
-        len = 4;
-    else
-        len = 1;				/* assume ASCII */
-    return len;
+	if (IS_LC1(*s))
+		len = 2;
+	else if (IS_LCPRV1(*s))
+		len = 3;
+	else if (IS_LC2(*s))
+		len = 3;
+	else if (IS_LCPRV2(*s))
+		len = 4;
+	else
+		len = 1;				/* assume ASCII */
+	return len;
 }
 
 static int
 pg_mule_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    /*
-     * Note: it's not really appropriate to assume that all multibyte charsets
-     * are double-wide on screen.  But this seems an okay approximation for
-     * the MULE charsets we currently support.
-     */
+	/*
+	 * Note: it's not really appropriate to assume that all multibyte charsets
+	 * are double-wide on screen.  But this seems an okay approximation for
+	 * the MULE charsets we currently support.
+	 */
 
-    if (IS_LC1(*s))
-        len = 1;
-    else if (IS_LCPRV1(*s))
-        len = 1;
-    else if (IS_LC2(*s))
-        len = 2;
-    else if (IS_LCPRV2(*s))
-        len = 2;
-    else
-        len = 1;				/* assume ASCII */
+	if (IS_LC1(*s))
+		len = 1;
+	else if (IS_LCPRV1(*s))
+		len = 1;
+	else if (IS_LC2(*s))
+		len = 2;
+	else if (IS_LCPRV2(*s))
+		len = 2;
+	else
+		len = 1;				/* assume ASCII */
 
-    return len;
+	return len;
 }
 
 /*
@@ -884,16 +884,16 @@ pg_mule_dsplen(const unsigned char *s)
 static int
 pg_latin12wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        *to++ = *from++;
-        len--;
-        cnt++;
-    }
-    *to = 0;
-    return cnt;
+	while (len > 0 && *from)
+	{
+		*to++ = *from++;
+		len--;
+		cnt++;
+	}
+	*to = 0;
+	return cnt;
 }
 
 /*
@@ -906,28 +906,28 @@ pg_latin12wchar_with_len(const unsigned char *from, pg_wchar *to, int len)
 static int
 pg_wchar2single_with_len(const pg_wchar *from, unsigned char *to, int len)
 {
-    int			cnt = 0;
+	int			cnt = 0;
 
-    while (len > 0 && *from)
-    {
-        *to++ = *from++;
-        len--;
-        cnt++;
-    }
-    *to = 0;
-    return cnt;
+	while (len > 0 && *from)
+	{
+		*to++ = *from++;
+		len--;
+		cnt++;
+	}
+	*to = 0;
+	return cnt;
 }
 
 static int
 pg_latin1_mblen(const unsigned char *s)
 {
-    return 1;
+	return 1;
 }
 
 static int
 pg_latin1_dsplen(const unsigned char *s)
 {
-    return pg_ascii_dsplen(s);
+	return pg_ascii_dsplen(s);
 }
 
 /*
@@ -936,29 +936,29 @@ pg_latin1_dsplen(const unsigned char *s)
 static int
 pg_sjis_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (*s >= 0xa1 && *s <= 0xdf)
-        len = 1;				/* 1 byte kana? */
-    else if (IS_HIGHBIT_SET(*s))
-        len = 2;				/* kanji? */
-    else
-        len = 1;				/* should be ASCII */
-    return len;
+	if (*s >= 0xa1 && *s <= 0xdf)
+		len = 1;				/* 1 byte kana? */
+	else if (IS_HIGHBIT_SET(*s))
+		len = 2;				/* kanji? */
+	else
+		len = 1;				/* should be ASCII */
+	return len;
 }
 
 static int
 pg_sjis_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (*s >= 0xa1 && *s <= 0xdf)
-        len = 1;				/* 1 byte kana? */
-    else if (IS_HIGHBIT_SET(*s))
-        len = 2;				/* kanji? */
-    else
-        len = pg_ascii_dsplen(s);	/* should be ASCII */
-    return len;
+	if (*s >= 0xa1 && *s <= 0xdf)
+		len = 1;				/* 1 byte kana? */
+	else if (IS_HIGHBIT_SET(*s))
+		len = 2;				/* kanji? */
+	else
+		len = pg_ascii_dsplen(s);	/* should be ASCII */
+	return len;
 }
 
 /*
@@ -967,25 +967,25 @@ pg_sjis_dsplen(const unsigned char *s)
 static int
 pg_big5_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_HIGHBIT_SET(*s))
-        len = 2;				/* kanji? */
-    else
-        len = 1;				/* should be ASCII */
-    return len;
+	if (IS_HIGHBIT_SET(*s))
+		len = 2;				/* kanji? */
+	else
+		len = 1;				/* should be ASCII */
+	return len;
 }
 
 static int
 pg_big5_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_HIGHBIT_SET(*s))
-        len = 2;				/* kanji? */
-    else
-        len = pg_ascii_dsplen(s);	/* should be ASCII */
-    return len;
+	if (IS_HIGHBIT_SET(*s))
+		len = 2;				/* kanji? */
+	else
+		len = pg_ascii_dsplen(s);	/* should be ASCII */
+	return len;
 }
 
 /*
@@ -994,25 +994,25 @@ pg_big5_dsplen(const unsigned char *s)
 static int
 pg_gbk_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_HIGHBIT_SET(*s))
-        len = 2;				/* kanji? */
-    else
-        len = 1;				/* should be ASCII */
-    return len;
+	if (IS_HIGHBIT_SET(*s))
+		len = 2;				/* kanji? */
+	else
+		len = 1;				/* should be ASCII */
+	return len;
 }
 
 static int
 pg_gbk_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_HIGHBIT_SET(*s))
-        len = 2;				/* kanji? */
-    else
-        len = pg_ascii_dsplen(s);	/* should be ASCII */
-    return len;
+	if (IS_HIGHBIT_SET(*s))
+		len = 2;				/* kanji? */
+	else
+		len = pg_ascii_dsplen(s);	/* should be ASCII */
+	return len;
 }
 
 /*
@@ -1021,25 +1021,25 @@ pg_gbk_dsplen(const unsigned char *s)
 static int
 pg_uhc_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_HIGHBIT_SET(*s))
-        len = 2;				/* 2byte? */
-    else
-        len = 1;				/* should be ASCII */
-    return len;
+	if (IS_HIGHBIT_SET(*s))
+		len = 2;				/* 2byte? */
+	else
+		len = 1;				/* should be ASCII */
+	return len;
 }
 
 static int
 pg_uhc_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_HIGHBIT_SET(*s))
-        len = 2;				/* 2byte? */
-    else
-        len = pg_ascii_dsplen(s);	/* should be ASCII */
-    return len;
+	if (IS_HIGHBIT_SET(*s))
+		len = 2;				/* 2byte? */
+	else
+		len = pg_ascii_dsplen(s);	/* should be ASCII */
+	return len;
 }
 
 /*
@@ -1060,368 +1060,730 @@ pg_uhc_dsplen(const unsigned char *s)
 static int
 pg_gb18030_mblen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (!IS_HIGHBIT_SET(*s))
-        len = 1;				/* ASCII */
-    else if (*(s + 1) >= 0x30 && *(s + 1) <= 0x39)
-        len = 4;
-    else
-        len = 2;
-    return len;
+	if (!IS_HIGHBIT_SET(*s))
+		len = 1;				/* ASCII */
+	else if (*(s + 1) >= 0x30 && *(s + 1) <= 0x39)
+		len = 4;
+	else
+		len = 2;
+	return len;
 }
 
 static int
 pg_gb18030_dsplen(const unsigned char *s)
 {
-    int			len;
+	int			len;
 
-    if (IS_HIGHBIT_SET(*s))
-        len = 2;
-    else
-        len = pg_ascii_dsplen(s);	/* ASCII */
-    return len;
+	if (IS_HIGHBIT_SET(*s))
+		len = 2;
+	else
+		len = pg_ascii_dsplen(s);	/* ASCII */
+	return len;
 }
 
 /*
  *-------------------------------------------------------------------
  * multibyte sequence validators
  *
- * These functions accept "s", a pointer to the first byte of a string,
- * and "len", the remaining length of the string.  If there is a validly
- * encoded character beginning at *s, return its length in bytes; else
- * return -1.
+ * The verifychar functions accept "s", a pointer to the first byte of a
+ * string, and "len", the remaining length of the string.  If there is a
+ * validly encoded character beginning at *s, return its length in bytes;
+ * else return -1.
  *
- * The functions can assume that len > 0 and that *s != '\0', but they must
- * test for and reject zeroes in any additional bytes of a multibyte character.
+ * The verifystr functions also accept "s", a pointer to a string and "len",
+ * the length of the string.  They verify the whole string, and return the
+ * number of input bytes (<= len) that are valid.  In other words, if the
+ * whole string is valid, verifystr returns "len", otherwise it returns the
+ * byte offset of the first invalid character.  The verifystr functions must
+ * test for and reject zeroes in the input.
  *
- * Note that this definition allows the function for a single-byte
- * encoding to be just "return 1".
+ * The verifychar functions can assume that len > 0 and that *s != '\0', but
+ * they must test for and reject zeroes in any additional bytes of a
+ * multibyte character.  Note that this definition allows the function for a
+ * single-byte encoding to be just "return 1".
  *-------------------------------------------------------------------
  */
+static int
+pg_ascii_verifychar(const unsigned char *s, int len)
+{
+	return 1;
+}
 
 static int
-pg_ascii_verifier(const unsigned char *s, int len)
+pg_ascii_verifystr(const unsigned char *s, int len)
 {
-    return 1;
+	const unsigned char *nullpos = memchr(s, 0, len);
+
+	if (nullpos == NULL)
+		return len;
+	else
+		return nullpos - s;
 }
 
 #define IS_EUC_RANGE_VALID(c)	((c) >= 0xa1 && (c) <= 0xfe)
 
 static int
-pg_eucjp_verifier(const unsigned char *s, int len)
+pg_eucjp_verifychar(const unsigned char *s, int len)
 {
-    int			l;
-    unsigned char c1,
-            c2;
+	int			l;
+	unsigned char c1,
+				c2;
 
-    c1 = *s++;
+	c1 = *s++;
 
-    switch (c1)
-    {
-        case SS2:				/* JIS X 0201 */
-            l = 2;
-            if (l > len)
-                return -1;
-            c2 = *s++;
-            if (c2 < 0xa1 || c2 > 0xdf)
-                return -1;
-            break;
+	switch (c1)
+	{
+		case SS2:				/* JIS X 0201 */
+			l = 2;
+			if (l > len)
+				return -1;
+			c2 = *s++;
+			if (c2 < 0xa1 || c2 > 0xdf)
+				return -1;
+			break;
 
-        case SS3:				/* JIS X 0212 */
-            l = 3;
-            if (l > len)
-                return -1;
-            c2 = *s++;
-            if (!IS_EUC_RANGE_VALID(c2))
-                return -1;
-            c2 = *s++;
-            if (!IS_EUC_RANGE_VALID(c2))
-                return -1;
-            break;
+		case SS3:				/* JIS X 0212 */
+			l = 3;
+			if (l > len)
+				return -1;
+			c2 = *s++;
+			if (!IS_EUC_RANGE_VALID(c2))
+				return -1;
+			c2 = *s++;
+			if (!IS_EUC_RANGE_VALID(c2))
+				return -1;
+			break;
 
-        default:
-            if (IS_HIGHBIT_SET(c1)) /* JIS X 0208? */
-            {
-                l = 2;
-                if (l > len)
-                    return -1;
-                if (!IS_EUC_RANGE_VALID(c1))
-                    return -1;
-                c2 = *s++;
-                if (!IS_EUC_RANGE_VALID(c2))
-                    return -1;
-            }
-            else
-                /* must be ASCII */
-            {
-                l = 1;
-            }
-            break;
-    }
+		default:
+			if (IS_HIGHBIT_SET(c1)) /* JIS X 0208? */
+			{
+				l = 2;
+				if (l > len)
+					return -1;
+				if (!IS_EUC_RANGE_VALID(c1))
+					return -1;
+				c2 = *s++;
+				if (!IS_EUC_RANGE_VALID(c2))
+					return -1;
+			}
+			else
+				/* must be ASCII */
+			{
+				l = 1;
+			}
+			break;
+	}
 
-    return l;
+	return l;
 }
 
 static int
-pg_euckr_verifier(const unsigned char *s, int len)
+pg_eucjp_verifystr(const unsigned char *s, int len)
 {
-    int			l;
-    unsigned char c1,
-            c2;
+	const unsigned char *start = s;
 
-    c1 = *s++;
+	while (len > 0)
+	{
+		int			l;
 
-    if (IS_HIGHBIT_SET(c1))
-    {
-        l = 2;
-        if (l > len)
-            return -1;
-        if (!IS_EUC_RANGE_VALID(c1))
-            return -1;
-        c2 = *s++;
-        if (!IS_EUC_RANGE_VALID(c2))
-            return -1;
-    }
-    else
-        /* must be ASCII */
-    {
-        l = 1;
-    }
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_eucjp_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
 
-    return l;
+	return s - start;
+}
+
+static int
+pg_euckr_verifychar(const unsigned char *s, int len)
+{
+	int			l;
+	unsigned char c1,
+				c2;
+
+	c1 = *s++;
+
+	if (IS_HIGHBIT_SET(c1))
+	{
+		l = 2;
+		if (l > len)
+			return -1;
+		if (!IS_EUC_RANGE_VALID(c1))
+			return -1;
+		c2 = *s++;
+		if (!IS_EUC_RANGE_VALID(c2))
+			return -1;
+	}
+	else
+		/* must be ASCII */
+	{
+		l = 1;
+	}
+
+	return l;
+}
+
+static int
+pg_euckr_verifystr(const unsigned char *s, int len)
+{
+	const unsigned char *start = s;
+
+	while (len > 0)
+	{
+		int			l;
+
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_euckr_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
+
+	return s - start;
 }
 
 /* EUC-CN byte sequences are exactly same as EUC-KR */
-#define pg_euccn_verifier	pg_euckr_verifier
+#define pg_euccn_verifychar	pg_euckr_verifychar
+#define pg_euccn_verifystr	pg_euckr_verifystr
 
 static int
-pg_euctw_verifier(const unsigned char *s, int len)
+pg_euctw_verifychar(const unsigned char *s, int len)
 {
-    int			l;
-    unsigned char c1,
-            c2;
+	int			l;
+	unsigned char c1,
+				c2;
 
-    c1 = *s++;
+	c1 = *s++;
 
-    switch (c1)
-    {
-        case SS2:				/* CNS 11643 Plane 1-7 */
-            l = 4;
-            if (l > len)
-                return -1;
-            c2 = *s++;
-            if (c2 < 0xa1 || c2 > 0xa7)
-                return -1;
-            c2 = *s++;
-            if (!IS_EUC_RANGE_VALID(c2))
-                return -1;
-            c2 = *s++;
-            if (!IS_EUC_RANGE_VALID(c2))
-                return -1;
-            break;
+	switch (c1)
+	{
+		case SS2:				/* CNS 11643 Plane 1-7 */
+			l = 4;
+			if (l > len)
+				return -1;
+			c2 = *s++;
+			if (c2 < 0xa1 || c2 > 0xa7)
+				return -1;
+			c2 = *s++;
+			if (!IS_EUC_RANGE_VALID(c2))
+				return -1;
+			c2 = *s++;
+			if (!IS_EUC_RANGE_VALID(c2))
+				return -1;
+			break;
 
-        case SS3:				/* unused */
-            return -1;
+		case SS3:				/* unused */
+			return -1;
 
-        default:
-            if (IS_HIGHBIT_SET(c1)) /* CNS 11643 Plane 1 */
-            {
-                l = 2;
-                if (l > len)
-                    return -1;
-                /* no further range check on c1? */
-                c2 = *s++;
-                if (!IS_EUC_RANGE_VALID(c2))
-                    return -1;
-            }
-            else
-                /* must be ASCII */
-            {
-                l = 1;
-            }
-            break;
-    }
-    return l;
+		default:
+			if (IS_HIGHBIT_SET(c1)) /* CNS 11643 Plane 1 */
+			{
+				l = 2;
+				if (l > len)
+					return -1;
+				/* no further range check on c1? */
+				c2 = *s++;
+				if (!IS_EUC_RANGE_VALID(c2))
+					return -1;
+			}
+			else
+				/* must be ASCII */
+			{
+				l = 1;
+			}
+			break;
+	}
+	return l;
 }
 
 static int
-pg_johab_verifier(const unsigned char *s, int len)
+pg_euctw_verifystr(const unsigned char *s, int len)
 {
-    int			l,
-            mbl;
-    unsigned char c;
+	const unsigned char *start = s;
 
-    l = mbl = pg_johab_mblen(s);
+	while (len > 0)
+	{
+		int			l;
 
-    if (len < l)
-        return -1;
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_euctw_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
 
-    if (!IS_HIGHBIT_SET(*s))
-        return mbl;
-
-    while (--l > 0)
-    {
-        c = *++s;
-        if (!IS_EUC_RANGE_VALID(c))
-            return -1;
-    }
-    return mbl;
+	return s - start;
 }
 
 static int
-pg_mule_verifier(const unsigned char *s, int len)
+pg_johab_verifychar(const unsigned char *s, int len)
 {
-    int			l,
-            mbl;
-    unsigned char c;
+	int			l,
+				mbl;
+	unsigned char c;
 
-    l = mbl = pg_mule_mblen(s);
+	l = mbl = pg_johab_mblen(s);
 
-    if (len < l)
-        return -1;
+	if (len < l)
+		return -1;
 
-    while (--l > 0)
-    {
-        c = *++s;
-        if (!IS_HIGHBIT_SET(c))
-            return -1;
-    }
-    return mbl;
+	if (!IS_HIGHBIT_SET(*s))
+		return mbl;
+
+	while (--l > 0)
+	{
+		c = *++s;
+		if (!IS_EUC_RANGE_VALID(c))
+			return -1;
+	}
+	return mbl;
 }
 
 static int
-pg_latin1_verifier(const unsigned char *s, int len)
+pg_johab_verifystr(const unsigned char *s, int len)
 {
-    return 1;
+	const unsigned char *start = s;
+
+	while (len > 0)
+	{
+		int			l;
+
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_johab_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
+
+	return s - start;
 }
 
 static int
-pg_sjis_verifier(const unsigned char *s, int len)
+pg_mule_verifychar(const unsigned char *s, int len)
 {
-    int			l,
-            mbl;
-    unsigned char c1,
-            c2;
+	int			l,
+				mbl;
+	unsigned char c;
 
-    l = mbl = pg_sjis_mblen(s);
+	l = mbl = pg_mule_mblen(s);
 
-    if (len < l)
-        return -1;
+	if (len < l)
+		return -1;
 
-    if (l == 1)					/* pg_sjis_mblen already verified it */
-        return mbl;
-
-    c1 = *s++;
-    c2 = *s;
-    if (!ISSJISHEAD(c1) || !ISSJISTAIL(c2))
-        return -1;
-    return mbl;
+	while (--l > 0)
+	{
+		c = *++s;
+		if (!IS_HIGHBIT_SET(c))
+			return -1;
+	}
+	return mbl;
 }
 
 static int
-pg_big5_verifier(const unsigned char *s, int len)
+pg_mule_verifystr(const unsigned char *s, int len)
 {
-    int			l,
-            mbl;
+	const unsigned char *start = s;
 
-    l = mbl = pg_big5_mblen(s);
+	while (len > 0)
+	{
+		int			l;
 
-    if (len < l)
-        return -1;
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_mule_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
 
-    while (--l > 0)
-    {
-        if (*++s == '\0')
-            return -1;
-    }
-
-    return mbl;
+	return s - start;
 }
 
 static int
-pg_gbk_verifier(const unsigned char *s, int len)
+pg_latin1_verifychar(const unsigned char *s, int len)
 {
-    int			l,
-            mbl;
-
-    l = mbl = pg_gbk_mblen(s);
-
-    if (len < l)
-        return -1;
-
-    while (--l > 0)
-    {
-        if (*++s == '\0')
-            return -1;
-    }
-
-    return mbl;
+	return 1;
 }
 
 static int
-pg_uhc_verifier(const unsigned char *s, int len)
+pg_latin1_verifystr(const unsigned char *s, int len)
 {
-    int			l,
-            mbl;
+	const unsigned char *nullpos = memchr(s, 0, len);
 
-    l = mbl = pg_uhc_mblen(s);
-
-    if (len < l)
-        return -1;
-
-    while (--l > 0)
-    {
-        if (*++s == '\0')
-            return -1;
-    }
-
-    return mbl;
+	if (nullpos == NULL)
+		return len;
+	else
+		return nullpos - s;
 }
 
 static int
-pg_gb18030_verifier(const unsigned char *s, int len)
+pg_sjis_verifychar(const unsigned char *s, int len)
 {
-    int			l;
+	int			l,
+				mbl;
+	unsigned char c1,
+				c2;
 
-    if (!IS_HIGHBIT_SET(*s))
-        l = 1;					/* ASCII */
-    else if (len >= 4 && *(s + 1) >= 0x30 && *(s + 1) <= 0x39)
-    {
-        /* Should be 4-byte, validate remaining bytes */
-        if (*s >= 0x81 && *s <= 0xfe &&
-            *(s + 2) >= 0x81 && *(s + 2) <= 0xfe &&
-            *(s + 3) >= 0x30 && *(s + 3) <= 0x39)
-            l = 4;
-        else
-            l = -1;
-    }
-    else if (len >= 2 && *s >= 0x81 && *s <= 0xfe)
-    {
-        /* Should be 2-byte, validate */
-        if ((*(s + 1) >= 0x40 && *(s + 1) <= 0x7e) ||
-            (*(s + 1) >= 0x80 && *(s + 1) <= 0xfe))
-            l = 2;
-        else
-            l = -1;
-    }
-    else
-        l = -1;
-    return l;
+	l = mbl = pg_sjis_mblen(s);
+
+	if (len < l)
+		return -1;
+
+	if (l == 1)					/* pg_sjis_mblen already verified it */
+		return mbl;
+
+	c1 = *s++;
+	c2 = *s;
+	if (!ISSJISHEAD(c1) || !ISSJISTAIL(c2))
+		return -1;
+	return mbl;
 }
 
 static int
-pg_utf8_verifier(const unsigned char *s, int len)
+pg_sjis_verifystr(const unsigned char *s, int len)
 {
-    int			l = pg_utf_mblen(s);
+	const unsigned char *start = s;
 
-    if (len < l)
-        return -1;
+	while (len > 0)
+	{
+		int			l;
 
-    if (!pg_utf8_islegal(s, l))
-        return -1;
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_sjis_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
 
-    return l;
+	return s - start;
+}
+
+static int
+pg_big5_verifychar(const unsigned char *s, int len)
+{
+	int			l,
+				mbl;
+
+	l = mbl = pg_big5_mblen(s);
+
+	if (len < l)
+		return -1;
+
+	while (--l > 0)
+	{
+		if (*++s == '\0')
+			return -1;
+	}
+
+	return mbl;
+}
+
+static int
+pg_big5_verifystr(const unsigned char *s, int len)
+{
+	const unsigned char *start = s;
+
+	while (len > 0)
+	{
+		int			l;
+
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_big5_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
+
+	return s - start;
+}
+
+static int
+pg_gbk_verifychar(const unsigned char *s, int len)
+{
+	int			l,
+				mbl;
+
+	l = mbl = pg_gbk_mblen(s);
+
+	if (len < l)
+		return -1;
+
+	while (--l > 0)
+	{
+		if (*++s == '\0')
+			return -1;
+	}
+
+	return mbl;
+}
+
+static int
+pg_gbk_verifystr(const unsigned char *s, int len)
+{
+	const unsigned char *start = s;
+
+	while (len > 0)
+	{
+		int			l;
+
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_gbk_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
+
+	return s - start;
+}
+
+static int
+pg_uhc_verifychar(const unsigned char *s, int len)
+{
+	int			l,
+				mbl;
+
+	l = mbl = pg_uhc_mblen(s);
+
+	if (len < l)
+		return -1;
+
+	while (--l > 0)
+	{
+		if (*++s == '\0')
+			return -1;
+	}
+
+	return mbl;
+}
+
+static int
+pg_uhc_verifystr(const unsigned char *s, int len)
+{
+	const unsigned char *start = s;
+
+	while (len > 0)
+	{
+		int			l;
+
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_uhc_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
+
+	return s - start;
+}
+
+static int
+pg_gb18030_verifychar(const unsigned char *s, int len)
+{
+	int			l;
+
+	if (!IS_HIGHBIT_SET(*s))
+		l = 1;					/* ASCII */
+	else if (len >= 4 && *(s + 1) >= 0x30 && *(s + 1) <= 0x39)
+	{
+		/* Should be 4-byte, validate remaining bytes */
+		if (*s >= 0x81 && *s <= 0xfe &&
+			*(s + 2) >= 0x81 && *(s + 2) <= 0xfe &&
+			*(s + 3) >= 0x30 && *(s + 3) <= 0x39)
+			l = 4;
+		else
+			l = -1;
+	}
+	else if (len >= 2 && *s >= 0x81 && *s <= 0xfe)
+	{
+		/* Should be 2-byte, validate */
+		if ((*(s + 1) >= 0x40 && *(s + 1) <= 0x7e) ||
+			(*(s + 1) >= 0x80 && *(s + 1) <= 0xfe))
+			l = 2;
+		else
+			l = -1;
+	}
+	else
+		l = -1;
+	return l;
+}
+
+static int
+pg_gb18030_verifystr(const unsigned char *s, int len)
+{
+	const unsigned char *start = s;
+
+	while (len > 0)
+	{
+		int			l;
+
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_gb18030_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
+
+	return s - start;
+}
+
+static int
+pg_utf8_verifychar(const unsigned char *s, int len)
+{
+	int			l;
+
+	if ((*s & 0x80) == 0)
+	{
+		if (*s == '\0')
+			return -1;
+		return 1;
+	}
+	else if ((*s & 0xe0) == 0xc0)
+		l = 2;
+	else if ((*s & 0xf0) == 0xe0)
+		l = 3;
+	else if ((*s & 0xf8) == 0xf0)
+		l = 4;
+	else
+		l = 1;
+
+	if (l > len)
+		return -1;
+
+	if (!pg_utf8_islegal(s, l))
+		return -1;
+
+	return l;
+}
+
+static int
+pg_utf8_verifystr(const unsigned char *s, int len)
+{
+	const unsigned char *start = s;
+
+	while (len > 0)
+	{
+		int			l;
+
+		/* fast path for ASCII-subset characters */
+		if (!IS_HIGHBIT_SET(*s))
+		{
+			if (*s == '\0')
+				break;
+			l = 1;
+		}
+		else
+		{
+			l = pg_utf8_verifychar(s, len);
+			if (l == -1)
+				break;
+		}
+		s += l;
+		len -= l;
+	}
+
+	return s - start;
 }
 
 /*
@@ -1441,58 +1803,58 @@ pg_utf8_verifier(const unsigned char *s, int len)
 bool
 pg_utf8_islegal(const unsigned char *source, int length)
 {
-    unsigned char a;
+	unsigned char a;
 
-    switch (length)
-    {
-        default:
-            /* reject lengths 5 and 6 for now */
-            return false;
-        case 4:
-            a = source[3];
-            if (a < 0x80 || a > 0xBF)
-                return false;
-            /* FALL THRU */
-        case 3:
-            a = source[2];
-            if (a < 0x80 || a > 0xBF)
-                return false;
-            /* FALL THRU */
-        case 2:
-            a = source[1];
-            switch (*source)
-            {
-                case 0xE0:
-                    if (a < 0xA0 || a > 0xBF)
-                        return false;
-                    break;
-                case 0xED:
-                    if (a < 0x80 || a > 0x9F)
-                        return false;
-                    break;
-                case 0xF0:
-                    if (a < 0x90 || a > 0xBF)
-                        return false;
-                    break;
-                case 0xF4:
-                    if (a < 0x80 || a > 0x8F)
-                        return false;
-                    break;
-                default:
-                    if (a < 0x80 || a > 0xBF)
-                        return false;
-                    break;
-            }
-            /* FALL THRU */
-        case 1:
-            a = *source;
-            if (a >= 0x80 && a < 0xC2)
-                return false;
-            if (a > 0xF4)
-                return false;
-            break;
-    }
-    return true;
+	switch (length)
+	{
+		default:
+			/* reject lengths 5 and 6 for now */
+			return false;
+		case 4:
+			a = source[3];
+			if (a < 0x80 || a > 0xBF)
+				return false;
+			/* FALL THRU */
+		case 3:
+			a = source[2];
+			if (a < 0x80 || a > 0xBF)
+				return false;
+			/* FALL THRU */
+		case 2:
+			a = source[1];
+			switch (*source)
+			{
+				case 0xE0:
+					if (a < 0xA0 || a > 0xBF)
+						return false;
+					break;
+				case 0xED:
+					if (a < 0x80 || a > 0x9F)
+						return false;
+					break;
+				case 0xF0:
+					if (a < 0x90 || a > 0xBF)
+						return false;
+					break;
+				case 0xF4:
+					if (a < 0x80 || a > 0x8F)
+						return false;
+					break;
+				default:
+					if (a < 0x80 || a > 0xBF)
+						return false;
+					break;
+			}
+			/* FALL THRU */
+		case 1:
+			a = *source;
+			if (a >= 0x80 && a < 0xC2)
+				return false;
+			if (a > 0xF4)
+				return false;
+			break;
+	}
+	return true;
 }
 
 
@@ -1503,59 +1865,74 @@ pg_utf8_islegal(const unsigned char *source, int length)
  *-------------------------------------------------------------------
  */
 const pg_wchar_tbl pg_wchar_table[] = {
-        {pg_ascii2wchar_with_len, pg_wchar2single_with_len, pg_ascii_mblen, pg_ascii_dsplen, pg_ascii_verifier, 1}, /* PG_SQL_ASCII */
-        {pg_eucjp2wchar_with_len, pg_wchar2euc_with_len, pg_eucjp_mblen, pg_eucjp_dsplen, pg_eucjp_verifier, 3},	/* PG_EUC_JP */
-        {pg_euccn2wchar_with_len, pg_wchar2euc_with_len, pg_euccn_mblen, pg_euccn_dsplen, pg_euccn_verifier, 2},	/* PG_EUC_CN */
-        {pg_euckr2wchar_with_len, pg_wchar2euc_with_len, pg_euckr_mblen, pg_euckr_dsplen, pg_euckr_verifier, 3},	/* PG_EUC_KR */
-        {pg_euctw2wchar_with_len, pg_wchar2euc_with_len, pg_euctw_mblen, pg_euctw_dsplen, pg_euctw_verifier, 4},	/* PG_EUC_TW */
-        {pg_eucjp2wchar_with_len, pg_wchar2euc_with_len, pg_eucjp_mblen, pg_eucjp_dsplen, pg_eucjp_verifier, 3},	/* PG_EUC_JIS_2004 */
-        {pg_utf2wchar_with_len, pg_wchar2utf_with_len, pg_utf_mblen, pg_utf_dsplen, pg_utf8_verifier, 4},	/* PG_UTF8 */
-        {pg_mule2wchar_with_len, pg_wchar2mule_with_len, pg_mule_mblen, pg_mule_dsplen, pg_mule_verifier, 4},	/* PG_MULE_INTERNAL */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN1 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN2 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN3 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN4 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN5 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN6 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN7 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN8 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN9 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_LATIN10 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN1256 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN1258 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN866 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN874 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_KOI8R */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN1251 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN1252 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* ISO-8859-5 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* ISO-8859-6 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* ISO-8859-7 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* ISO-8859-8 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN1250 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN1253 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN1254 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN1255 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_WIN1257 */
-        {pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifier, 1}, /* PG_KOI8U */
-        {0, 0, pg_sjis_mblen, pg_sjis_dsplen, pg_sjis_verifier, 2}, /* PG_SJIS */
-        {0, 0, pg_big5_mblen, pg_big5_dsplen, pg_big5_verifier, 2}, /* PG_BIG5 */
-        {0, 0, pg_gbk_mblen, pg_gbk_dsplen, pg_gbk_verifier, 2},	/* PG_GBK */
-        {0, 0, pg_uhc_mblen, pg_uhc_dsplen, pg_uhc_verifier, 2},	/* PG_UHC */
-        {0, 0, pg_gb18030_mblen, pg_gb18030_dsplen, pg_gb18030_verifier, 4},	/* PG_GB18030 */
-        {0, 0, pg_johab_mblen, pg_johab_dsplen, pg_johab_verifier, 3},	/* PG_JOHAB */
-        {0, 0, pg_sjis_mblen, pg_sjis_dsplen, pg_sjis_verifier, 2}	/* PG_SHIFT_JIS_2004 */
+	{pg_ascii2wchar_with_len, pg_wchar2single_with_len, pg_ascii_mblen, pg_ascii_dsplen, pg_ascii_verifychar, pg_ascii_verifystr, 1},	/* PG_SQL_ASCII */
+	{pg_eucjp2wchar_with_len, pg_wchar2euc_with_len, pg_eucjp_mblen, pg_eucjp_dsplen, pg_eucjp_verifychar, pg_eucjp_verifystr, 3},	/* PG_EUC_JP */
+	{pg_euccn2wchar_with_len, pg_wchar2euc_with_len, pg_euccn_mblen, pg_euccn_dsplen, pg_euccn_verifychar, pg_euccn_verifystr, 2},	/* PG_EUC_CN */
+	{pg_euckr2wchar_with_len, pg_wchar2euc_with_len, pg_euckr_mblen, pg_euckr_dsplen, pg_euckr_verifychar, pg_euckr_verifystr, 3},	/* PG_EUC_KR */
+	{pg_euctw2wchar_with_len, pg_wchar2euc_with_len, pg_euctw_mblen, pg_euctw_dsplen, pg_euctw_verifychar, pg_euctw_verifystr, 4},	/* PG_EUC_TW */
+	{pg_eucjp2wchar_with_len, pg_wchar2euc_with_len, pg_eucjp_mblen, pg_eucjp_dsplen, pg_eucjp_verifychar, pg_eucjp_verifystr, 3},	/* PG_EUC_JIS_2004 */
+	{pg_utf2wchar_with_len, pg_wchar2utf_with_len, pg_utf_mblen, pg_utf_dsplen, pg_utf8_verifychar, pg_utf8_verifystr, 4},	/* PG_UTF8 */
+	{pg_mule2wchar_with_len, pg_wchar2mule_with_len, pg_mule_mblen, pg_mule_dsplen, pg_mule_verifychar, pg_mule_verifystr, 4},	/* PG_MULE_INTERNAL */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN1 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN2 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN3 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN4 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN5 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN6 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN7 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN8 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN9 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_LATIN10 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN1256 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN1258 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN866 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN874 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_KOI8R */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN1251 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN1252 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* ISO-8859-5 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* ISO-8859-6 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* ISO-8859-7 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* ISO-8859-8 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN1250 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN1253 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN1254 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN1255 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_WIN1257 */
+	{pg_latin12wchar_with_len, pg_wchar2single_with_len, pg_latin1_mblen, pg_latin1_dsplen, pg_latin1_verifychar, pg_latin1_verifystr, 1},	/* PG_KOI8U */
+	{0, 0, pg_sjis_mblen, pg_sjis_dsplen, pg_sjis_verifychar, pg_sjis_verifystr, 2},	/* PG_SJIS */
+	{0, 0, pg_big5_mblen, pg_big5_dsplen, pg_big5_verifychar, pg_big5_verifystr, 2},	/* PG_BIG5 */
+	{0, 0, pg_gbk_mblen, pg_gbk_dsplen, pg_gbk_verifychar, pg_gbk_verifystr, 2},	/* PG_GBK */
+	{0, 0, pg_uhc_mblen, pg_uhc_dsplen, pg_uhc_verifychar, pg_uhc_verifystr, 2},	/* PG_UHC */
+	{0, 0, pg_gb18030_mblen, pg_gb18030_dsplen, pg_gb18030_verifychar, pg_gb18030_verifystr, 4},	/* PG_GB18030 */
+	{0, 0, pg_johab_mblen, pg_johab_dsplen, pg_johab_verifychar, pg_johab_verifystr, 3},	/* PG_JOHAB */
+	{0, 0, pg_sjis_mblen, pg_sjis_dsplen, pg_sjis_verifychar, pg_sjis_verifystr, 2} /* PG_SHIFT_JIS_2004 */
 };
 
 /*
  * Returns the byte length of a multibyte character.
+ *
+ * Caution: when dealing with text that is not certainly valid in the
+ * specified encoding, the result may exceed the actual remaining
+ * string length.  Callers that are not prepared to deal with that
+ * should use pg_encoding_mblen_bounded() instead.
  */
 int
 pg_encoding_mblen(int encoding, const char *mbstr)
 {
-    return (PG_VALID_ENCODING(encoding) ?
-            pg_wchar_table[encoding].mblen((const unsigned char *) mbstr) :
-            pg_wchar_table[PG_SQL_ASCII].mblen((const unsigned char *) mbstr));
+	return (PG_VALID_ENCODING(encoding) ?
+			pg_wchar_table[encoding].mblen((const unsigned char *) mbstr) :
+			pg_wchar_table[PG_SQL_ASCII].mblen((const unsigned char *) mbstr));
+}
+
+/*
+ * Returns the byte length of a multibyte character; but not more than
+ * the distance to end of string.
+ */
+int
+pg_encoding_mblen_bounded(int encoding, const char *mbstr)
+{
+	return strnlen(mbstr, pg_encoding_mblen(encoding, mbstr));
 }
 
 /*
@@ -1564,22 +1941,35 @@ pg_encoding_mblen(int encoding, const char *mbstr)
 int
 pg_encoding_dsplen(int encoding, const char *mbstr)
 {
-    return (PG_VALID_ENCODING(encoding) ?
-            pg_wchar_table[encoding].dsplen((const unsigned char *) mbstr) :
-            pg_wchar_table[PG_SQL_ASCII].dsplen((const unsigned char *) mbstr));
+	return (PG_VALID_ENCODING(encoding) ?
+			pg_wchar_table[encoding].dsplen((const unsigned char *) mbstr) :
+			pg_wchar_table[PG_SQL_ASCII].dsplen((const unsigned char *) mbstr));
 }
 
 /*
  * Verify the first multibyte character of the given string.
  * Return its byte length if good, -1 if bad.  (See comments above for
- * full details of the mbverify API.)
+ * full details of the mbverifychar API.)
  */
 int
-pg_encoding_verifymb(int encoding, const char *mbstr, int len)
+pg_encoding_verifymbchar(int encoding, const char *mbstr, int len)
 {
-    return (PG_VALID_ENCODING(encoding) ?
-            pg_wchar_table[encoding].mbverify((const unsigned char *) mbstr, len) :
-            pg_wchar_table[PG_SQL_ASCII].mbverify((const unsigned char *) mbstr, len));
+	return (PG_VALID_ENCODING(encoding) ?
+			pg_wchar_table[encoding].mbverifychar((const unsigned char *) mbstr, len) :
+			pg_wchar_table[PG_SQL_ASCII].mbverifychar((const unsigned char *) mbstr, len));
+}
+
+/*
+ * Verify that a string is valid for the given encoding.
+ * Returns the number of input bytes (<= len) that form a valid string.
+ * (See comments above for full details of the mbverifystr API.)
+ */
+int
+pg_encoding_verifymbstr(int encoding, const char *mbstr, int len)
+{
+	return (PG_VALID_ENCODING(encoding) ?
+			pg_wchar_table[encoding].mbverifystr((const unsigned char *) mbstr, len) :
+			pg_wchar_table[PG_SQL_ASCII].mbverifystr((const unsigned char *) mbstr, len));
 }
 
 /*
@@ -1588,7 +1978,7 @@ pg_encoding_verifymb(int encoding, const char *mbstr, int len)
 int
 pg_encoding_max_length(int encoding)
 {
-    Assert(PG_VALID_ENCODING(encoding));
+	Assert(PG_VALID_ENCODING(encoding));
 
-    return pg_wchar_table[encoding].maxmblen;
+	return pg_wchar_table[encoding].maxmblen;
 }

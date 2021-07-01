@@ -3,10 +3,10 @@
  * jsonapi.h
  *	  Declarations for JSON API support.
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
- * src/include/utils/jsonapi.h
+ * src/include/common/jsonapi.h
  *
  *-------------------------------------------------------------------------
  */
@@ -18,41 +18,41 @@
 
 typedef enum
 {
-    JSON_TOKEN_INVALID,
-    JSON_TOKEN_STRING,
-    JSON_TOKEN_NUMBER,
-    JSON_TOKEN_OBJECT_START,
-    JSON_TOKEN_OBJECT_END,
-    JSON_TOKEN_ARRAY_START,
-    JSON_TOKEN_ARRAY_END,
-    JSON_TOKEN_COMMA,
-    JSON_TOKEN_COLON,
-    JSON_TOKEN_TRUE,
-    JSON_TOKEN_FALSE,
-    JSON_TOKEN_NULL,
-    JSON_TOKEN_END
+	JSON_TOKEN_INVALID,
+	JSON_TOKEN_STRING,
+	JSON_TOKEN_NUMBER,
+	JSON_TOKEN_OBJECT_START,
+	JSON_TOKEN_OBJECT_END,
+	JSON_TOKEN_ARRAY_START,
+	JSON_TOKEN_ARRAY_END,
+	JSON_TOKEN_COMMA,
+	JSON_TOKEN_COLON,
+	JSON_TOKEN_TRUE,
+	JSON_TOKEN_FALSE,
+	JSON_TOKEN_NULL,
+	JSON_TOKEN_END
 } JsonTokenType;
 
 typedef enum
 {
-    JSON_SUCCESS,
-    JSON_ESCAPING_INVALID,
-    JSON_ESCAPING_REQUIRED,
-    JSON_EXPECTED_ARRAY_FIRST,
-    JSON_EXPECTED_ARRAY_NEXT,
-    JSON_EXPECTED_COLON,
-    JSON_EXPECTED_END,
-    JSON_EXPECTED_JSON,
-    JSON_EXPECTED_MORE,
-    JSON_EXPECTED_OBJECT_FIRST,
-    JSON_EXPECTED_OBJECT_NEXT,
-    JSON_EXPECTED_STRING,
-    JSON_INVALID_TOKEN,
-    JSON_UNICODE_CODE_POINT_ZERO,
-    JSON_UNICODE_ESCAPE_FORMAT,
-    JSON_UNICODE_HIGH_ESCAPE,
-    JSON_UNICODE_HIGH_SURROGATE,
-    JSON_UNICODE_LOW_SURROGATE
+	JSON_SUCCESS,
+	JSON_ESCAPING_INVALID,
+	JSON_ESCAPING_REQUIRED,
+	JSON_EXPECTED_ARRAY_FIRST,
+	JSON_EXPECTED_ARRAY_NEXT,
+	JSON_EXPECTED_COLON,
+	JSON_EXPECTED_END,
+	JSON_EXPECTED_JSON,
+	JSON_EXPECTED_MORE,
+	JSON_EXPECTED_OBJECT_FIRST,
+	JSON_EXPECTED_OBJECT_NEXT,
+	JSON_EXPECTED_STRING,
+	JSON_INVALID_TOKEN,
+	JSON_UNICODE_CODE_POINT_ZERO,
+	JSON_UNICODE_ESCAPE_FORMAT,
+	JSON_UNICODE_HIGH_ESCAPE,
+	JSON_UNICODE_HIGH_SURROGATE,
+	JSON_UNICODE_LOW_SURROGATE
 } JsonParseErrorType;
 
 
@@ -71,17 +71,17 @@ typedef enum
  */
 typedef struct JsonLexContext
 {
-    char	   *input;
-    int			input_length;
-    int			input_encoding;
-    char	   *token_start;
-    char	   *token_terminator;
-    char	   *prev_token_terminator;
-    JsonTokenType token_type;
-    int			lex_level;
-    int			line_number;
-    char	   *line_start;
-    StringInfo	strval;
+	char	   *input;
+	int			input_length;
+	int			input_encoding;
+	char	   *token_start;
+	char	   *token_terminator;
+	char	   *prev_token_terminator;
+	JsonTokenType token_type;
+	int			lex_level;
+	int			line_number;	/* line number, starting from 1 */
+	char	   *line_start;		/* where that line starts within input */
+	StringInfo	strval;
 } JsonLexContext;
 
 typedef void (*json_struct_action) (void *state);
@@ -103,16 +103,16 @@ typedef void (*json_scalar_action) (void *state, char *token, JsonTokenType toke
  */
 typedef struct JsonSemAction
 {
-    void	   *semstate;
-    json_struct_action object_start;
-    json_struct_action object_end;
-    json_struct_action array_start;
-    json_struct_action array_end;
-    json_ofield_action object_field_start;
-    json_ofield_action object_field_end;
-    json_aelem_action array_element_start;
-    json_aelem_action array_element_end;
-    json_scalar_action scalar;
+	void	   *semstate;
+	json_struct_action object_start;
+	json_struct_action object_end;
+	json_struct_action array_start;
+	json_struct_action array_end;
+	json_ofield_action object_field_start;
+	json_ofield_action object_field_end;
+	json_aelem_action array_element_start;
+	json_aelem_action array_element_end;
+	json_scalar_action scalar;
 } JsonSemAction;
 
 /*
@@ -125,7 +125,7 @@ typedef struct JsonSemAction
  * does nothing and just continues.
  */
 extern JsonParseErrorType pg_parse_json(JsonLexContext *lex,
-                                        JsonSemAction *sem);
+										JsonSemAction *sem);
 
 /* the null action object used for pure validation */
 extern JsonSemAction nullSemAction;
@@ -140,7 +140,7 @@ extern JsonSemAction nullSemAction;
  * JSON_SUCCESS).
  */
 extern JsonParseErrorType json_count_array_elements(JsonLexContext *lex,
-                                                    int *elements);
+													int *elements);
 
 /*
  * constructor for JsonLexContext, with or without strval element.
@@ -149,9 +149,9 @@ extern JsonParseErrorType json_count_array_elements(JsonLexContext *lex,
  * it should be avoided if the de-escaped lexeme is not required.
  */
 extern JsonLexContext *makeJsonLexContextCstringLen(char *json,
-                                                    int len,
-                                                    int encoding,
-                                                    bool need_escapes);
+													int len,
+													int encoding,
+													bool need_escapes);
 
 /* lex one token */
 extern JsonParseErrorType json_lex(JsonLexContext *lex);

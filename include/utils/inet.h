@@ -4,7 +4,7 @@
  *	  Declarations for operations on INET datatypes.
  *
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2021, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * src/include/utils/inet.h
@@ -22,9 +22,9 @@
  */
 typedef struct
 {
-    unsigned char family;		/* PGSQL_AF_INET or PGSQL_AF_INET6 */
-    unsigned char bits;			/* number of bits in netmask */
-    unsigned char ipaddr[16];	/* up to 128 bits of address */
+	unsigned char family;		/* PGSQL_AF_INET or PGSQL_AF_INET6 */
+	unsigned char bits;			/* number of bits in netmask */
+	unsigned char ipaddr[16];	/* up to 128 bits of address */
 } inet_struct;
 
 /*
@@ -51,8 +51,8 @@ typedef struct
  */
 typedef struct
 {
-    char		vl_len_[4];		/* Do not touch this field directly! */
-    inet_struct inet_data;
+	char		vl_len_[4];		/* Do not touch this field directly! */
+	inet_struct inet_data;
 } inet;
 
 /*
@@ -93,12 +93,12 @@ typedef struct
  */
 typedef struct macaddr
 {
-    unsigned char a;
-    unsigned char b;
-    unsigned char c;
-    unsigned char d;
-    unsigned char e;
-    unsigned char f;
+	unsigned char a;
+	unsigned char b;
+	unsigned char c;
+	unsigned char d;
+	unsigned char e;
+	unsigned char f;
 } macaddr;
 
 /*
@@ -106,14 +106,14 @@ typedef struct macaddr
  */
 typedef struct macaddr8
 {
-    unsigned char a;
-    unsigned char b;
-    unsigned char c;
-    unsigned char d;
-    unsigned char e;
-    unsigned char f;
-    unsigned char g;
-    unsigned char h;
+	unsigned char a;
+	unsigned char b;
+	unsigned char c;
+	unsigned char d;
+	unsigned char e;
+	unsigned char f;
+	unsigned char g;
+	unsigned char h;
 } macaddr8;
 
 /*
