@@ -837,15 +837,6 @@
 
 #define HAVE_BIO_GET_DATA 0
 
-/* Define to 1 if you have the `BIO_meth_new' function. */
-#define HAVE_BIO_METH_NEW 1
-
-/* Define to 1 if you have the `HMAC_CTX_free' function. */
-#define HAVE_HMAC_CTX_FREE 1
-
-/* Define to 1 if you have the `HMAC_CTX_new' function. */
-#define HAVE_HMAC_CTX_NEW 1
-
 #define FRONTEND 1
 
 /* Define to 1 to build with PAM support. (--with-pam) */
